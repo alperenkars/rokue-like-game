@@ -16,4 +16,9 @@ class WizardMonster extends Monster {
             hall.getRune().moveRandomly(hall);
         }
     }
+
+    public void move() {
+        System.out.println("ArcherMonster: Moving towards the hero!");
+    }
+
 }

@@ -17,6 +17,10 @@ class ArcherMonster extends Monster {
         }
     }
 
+    public void move() {
+        System.out.println("ArcherMonster: Moving towards the hero!");
+    }
+
     private int distanceTo(Position heroPosition) {
         return Math.abs(position.getX() - heroPosition.getX()) + Math.abs(position.getY() - heroPosition.getY());
     }
