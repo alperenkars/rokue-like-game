@@ -16,4 +16,9 @@ class FighterMonster extends Monster {
         Position newPosition = hall.getNeighbors(position).getFirst().getPosition();
         setPosition(newPosition);
     }
+
+    public void move() {
+        System.out.println("ArcherMonster: Moving towards the hero!");
+    }
+
 }
