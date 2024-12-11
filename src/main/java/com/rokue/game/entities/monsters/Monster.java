@@ -26,7 +26,12 @@ public abstract class Monster {
         this.position = position;
     }
 
-    public abstract void update(Hero hero, Hall hall);
-
     public abstract void move();
+
+    public void update(Hero hero, Hall hall) {
+        System.out.println("FighterMonster: Moving randomly!");
+        Position newPosition = hall.getNeighbors(position).getFirst().getPosition();
+        setPosition(newPosition);
+    }
+
 }

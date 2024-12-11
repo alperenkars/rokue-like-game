@@ -20,7 +20,7 @@ class WizardMonster extends Monster {
     }
 
     public void move() {
-        System.out.println("ArcherMonster: Moving towards the hero!");
+        return; // This monster does not move but this method is required by the abstract class.
     }
 
 }

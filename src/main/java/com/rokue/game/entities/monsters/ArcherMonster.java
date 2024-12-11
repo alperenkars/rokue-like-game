@@ -11,19 +11,8 @@ class ArcherMonster extends Monster {
         super(startPosition, new ShootArrow());
     }
 
-    @Override
-    public void update(Hero hero, Hall hall) {
-        System.out.println("ArcherMonster: Shooting arrows!");
-        if (distanceTo(hero.getPosition()) < 4) {
-            hero.decreaseLife();
-        }
-    }
-
     public void move() {
         System.out.println("ArcherMonster: Moving towards the hero!");
     }
 
-    private int distanceTo(Position heroPosition) {
-        return Math.abs(position.getX() - heroPosition.getX()) + Math.abs(position.getY() - heroPosition.getY());
-    }
 }
