@@ -5,15 +5,21 @@ import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.util.Position;
 
-public abstract class Monster implements MonsterBehaviour {
+public abstract class Monster {
     protected Position position;
+    private MonsterBehaviour behaviour;
 
-    public Monster(Position startPosition) {
+    public Monster(Position startPosition, MonsterBehaviour behaviour) {
         this.position = startPosition;
+        this.behaviour = behaviour;
     }
 
     public Position getPosition() {
         return position;
+    }
+
+    public void performAction(Hero hero, Hall hall) {
+        behaviour.act(hero, hall);
     }
 
     public void setPosition(Position position) {
