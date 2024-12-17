@@ -27,11 +27,11 @@ public class PlayMode implements GameState {
         this.currentHall = halls.get(0);
         this.hero = hero;
         this.eventManager = eventManager;
-        this.gameTimer = new GameTimer(eventManager);
     }
 
     public void enter(GameSystem system) {
         System.out.println("Entering Play Mode");
+        this.gameTimer = new GameTimer(eventManager);
         this.gameTimer.start(PlayMode.START_TIME);
 
         eventManager.subscribe("TIMER_TICK", (eventType, data) -> onTimerTick((int) data));
@@ -45,7 +45,9 @@ public class PlayMode implements GameState {
 
     public void exit(GameSystem system) {
         System.out.println("Exiting Play Mode");
-        gameTimer.stop();
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
         eventManager.unsubscribe("TIMER_TICK", null);
         eventManager.unsubscribe("TIME_EXPIRED", null);
         eventManager.unsubscribe("RUNE_COLLECTED", null);
@@ -78,6 +80,7 @@ public class PlayMode implements GameState {
             gameTimer.start(PlayMode.START_TIME);
             hero.setPosition(PlayMode.START_POSITION);
         } else {
+            eventManager.notify("GAME_COMPLETED", null);
             System.out.println("All halls completed. You win!");
         }
     }

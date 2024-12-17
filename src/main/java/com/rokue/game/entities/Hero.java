@@ -1,6 +1,7 @@
 package com.rokue.game.entities;
 
 import com.rokue.game.actions.MoveAction;
+import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
