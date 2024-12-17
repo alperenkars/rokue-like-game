@@ -44,14 +44,33 @@ public class PlayModeUI extends JPanel implements IRenderer {
     private BufferedImage playerImage;
     private BufferedImage runeImage;
 
+    // Define tile positions in the tileset
+    private static final int FLOOR_TILE_X = 6;  // Dark floor tile position
+    private static final int FLOOR_TILE_Y = 0;
+    
+    private static final int WALL_TOP_X = 4;    // Top wall tile position
+    private static final int WALL_TOP_Y = 0;
+    
+    private static final int WALL_SIDE_X = 3;   // Side wall tile position
+    private static final int WALL_SIDE_Y = 1;
+    
+    private static final int CORNER_TL_X = 3;   // Top-left corner position
+    private static final int CORNER_TL_Y = 0;
+    
+    private static final int CORNER_TR_X = 5;   // Top-right corner position
+    private static final int CORNER_TR_Y = 0;
+
     public PlayModeUI(PlayMode playMode) {
         this.playMode = playMode;
-        setBackground(Color.BLACK);
+        setBackground(new Color(43, 27, 44));  // Dark purple background
 
-        tileLoader = new TileLoader("/assets/0x72_16x16DungeonTileset.v5.png", originalTileSize, originalTileSize, scaleFactor);
+        // Initialize tile loader with the dungeon tileset
+        tileLoader = new TileLoader("/assets/0x72_16x16DungeonTileset.v5.png", 
+                                  originalTileSize, originalTileSize, scaleFactor);
 
-        floorTile = tileLoader.getTile(1,0); // Example floor tile
-        wallTile = tileLoader.getTile(0,0);  // Example wall tile
+        // Load specific tiles from the tileset
+        floorTile = tileLoader.getTile(FLOOR_TILE_X, FLOOR_TILE_Y);
+        wallTile = tileLoader.getTile(WALL_TOP_X, WALL_TOP_Y);
 
         try {
             playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
@@ -63,6 +82,35 @@ public class PlayModeUI extends JPanel implements IRenderer {
         setPreferredSize(new Dimension(hallX + hallWidth + 300, hallY + hallHeight + 50));
     }
 
+    private void drawHall(Graphics g, Hall hall) {
+        for (int y = 0; y < cellCountY; y++) {
+            for (int x = 0; x < cellCountX; x++) {
+                int screenX = hallX + x * cellWidth;
+                int screenY = hallY + y * cellHeight;
+
+                if (y == 0) {  // Top wall
+                    if (x == 0) {
+                        g.drawImage(tileLoader.getTile(CORNER_TL_X, CORNER_TL_Y), 
+                                  screenX, screenY, cellWidth, cellHeight, null);
+                    } else if (x == cellCountX - 1) {
+                        g.drawImage(tileLoader.getTile(CORNER_TR_X, CORNER_TR_Y), 
+                                  screenX, screenY, cellWidth, cellHeight, null);
+                    } else {
+                        g.drawImage(tileLoader.getTile(WALL_TOP_X, WALL_TOP_Y), 
+                                  screenX, screenY, cellWidth, cellHeight, null);
+                    }
+                } else if (y == cellCountY - 1) {  // Bottom wall
+                    // Similar logic for bottom wall...
+                } else if (x == 0 || x == cellCountX - 1) {  // Side walls
+                    g.drawImage(tileLoader.getTile(WALL_SIDE_X, WALL_SIDE_Y), 
+                              screenX, screenY, cellWidth, cellHeight, null);
+                } else {  // Floor
+                    g.drawImage(floorTile, screenX, screenY, cellWidth, cellHeight, null);
+                }
+            }
+        }
+    }
+
     @Override
     public void render(GameState state) {
         if (state instanceof PlayMode) {
@@ -71,74 +119,52 @@ public class PlayModeUI extends JPanel implements IRenderer {
         repaint();
     }
 
-    private boolean isBoundaryCell(int x, int y) {
-        return x == 0 || x == cellCountX - 1 || y == 0 || y == cellCountY - 1;
-    }
-
-    // Update the paintComponent method to use the isBoundaryCell method
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (playMode == null) return;
 
+        // Enable antialiasing for smoother rendering
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
+                            RenderingHints.VALUE_ANTIALIAS_ON);
+
         Hall hall = playMode.getCurrentHall();
         Hero hero = playMode.getHero();
-        int remainingTime = playMode.getRemainingTime();
 
-        int width = hall.getWidth();
-        int height = hall.getHeight();
-
-        for (int y = 0; y < cellCountY; y++) {
-            for (int x = 0; x < cellCountX; x++) {
-                int screenX = hallX + x * cellWidth;
-                int screenY = hallY + y * cellHeight;
-
-                BufferedImage tileToDraw;
-
-                // Select floor or wall tiles
-                if (isBoundaryCell(x, y)) {
-                    tileToDraw = wallTile; // Walls at boundaries
-                } else {
-                    tileToDraw = floorTile; // Floors in the middle
-                }
-
-                // Draw the tile scaled to 80x80
-                g.drawImage(tileToDraw, screenX, screenY, cellWidth, cellHeight, null);
-
-                // Draw entities (hero, rune, etc.) here
-                if (x == 2 && y == 2 && runeImage != null) { // Example: Rune at (2,2)
-                    g.drawImage(runeImage, screenX, screenY, cellWidth, cellHeight, null);
-                }
-
-            }
-        }
+        // Draw the hall
+        drawHall(g2d, hall);
 
         // Draw hero
         Position heroPos = hero.getPosition();
         int heroX = hallX + heroPos.getX() * cellWidth;
         int heroY = hallY + heroPos.getY() * cellHeight;
         if (playerImage != null) {
-            // Draw hero scaled to exactly one cell
-            g.drawImage(playerImage, heroX, heroY, heroX + cellWidth, heroY + cellHeight,
-                    0, 0, playerImage.getWidth(), playerImage.getHeight(), null);
-        } else {
-            // fallback hero representation
-            g.setColor(Color.BLUE);
-            g.fillOval(heroX + cellWidth/4, heroY + cellHeight/4, cellWidth/2, cellHeight/2);
+            g2d.drawImage(playerImage, heroX, heroY, cellWidth, cellHeight, null);
         }
 
-        // Draw UI panel
+        // Draw UI elements
+        drawUI(g2d, hero);
+    }
+
+    private void drawUI(Graphics2D g, Hero hero) {
+        // Draw inventory panel background
         g.setColor(new Color(43, 27, 44));
-        g.fillRect(uiX, uiTopY, 150, 100);
+        g.fillRect(uiX, uiTopY, 200, 400);
 
+        // Draw time
         g.setColor(Color.WHITE);
-        g.drawString("Time : " + remainingTime + " seconds", uiX + 10, uiTopY + 20);
+        g.setFont(new Font("Arial", Font.BOLD, 16));
+        g.drawString("Time: " + playMode.getRemainingTime() + " seconds", 
+                    uiX + 10, uiTopY + 30);
 
-        g.setColor(Color.RED);
-        StringBuilder hearts = new StringBuilder();
+        // Draw hearts
+        int heartSize = 20;
+        int heartX = uiX + 10;
+        int heartY = uiTopY + 50;
         for (int i = 0; i < hero.getLives(); i++) {
-            hearts.append("♥ ");
+            g.setColor(Color.RED);
+            g.fillOval(heartX + (i * (heartSize + 5)), heartY, heartSize, heartSize);
         }
-        g.drawString(hearts.toString(), uiX + 10, uiTopY + 40);
     }
 }
