@@ -34,8 +34,6 @@ public class PlayMode implements GameState {
         this.gameTimer = new GameTimer(eventManager);
         this.gameTimer.start(PlayMode.START_TIME);
 
-        eventManager.subscribe("TIMER_TICK", (eventType, data) -> onTimerTick((int) data));
-        eventManager.subscribe("TIME_EXPIRED", (eventType, data) -> onTimeExpired());
         eventManager.subscribe("RUNE_COLLECTED", (eventType, data) -> onRuneCollected());
     }
 
@@ -48,8 +46,6 @@ public class PlayMode implements GameState {
         if (gameTimer != null) {
             gameTimer.stop();
         }
-        eventManager.unsubscribe("TIMER_TICK", null);
-        eventManager.unsubscribe("TIME_EXPIRED", null);
         eventManager.unsubscribe("RUNE_COLLECTED", null);
     }
 
@@ -60,14 +56,6 @@ public class PlayMode implements GameState {
                 this.hero.move(moveAction.getDirection(), this.currentHall);
             }
         }
-    }
-
-    private void onTimerTick(int remainingTime) {
-        System.out.println("Time remaining: " + remainingTime + " seconds");
-    }
-
-    private void onTimeExpired() {
-        System.out.println("Time's up! Game Over!");
     }
 
     private void onRuneCollected() {

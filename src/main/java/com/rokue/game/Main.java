@@ -49,6 +49,14 @@ public class Main {
                 frame.repaint();
             });
 
+            eventManager.subscribe("TIME_EXPIRED", (eventType, data) -> {
+                gameSystem.setState(mainMenu);
+                frame.getContentPane().removeAll();
+                frame.add(mainMenuUI);
+                frame.revalidate();
+                frame.repaint();
+            });
+
             eventManager.subscribe("START_GAME", (eventType, data) -> {
                 // Create a new PlayMode instance
                 PlayMode newPlayMode = createPlayMode(eventManager);
