@@ -1,6 +1,8 @@
 package com.rokue.game.states;
 
 import com.rokue.game.GameSystem;
+import com.rokue.game.actions.IAction;
+import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.GameTimer;
@@ -49,6 +51,15 @@ public class PlayMode implements GameState {
         eventManager.unsubscribe("RUNE_COLLECTED", null);
     }
 
+    public void handleActions(List<IAction> actions) {
+        for (IAction action : actions) {
+            if (action instanceof MoveAction) {
+                MoveAction moveAction = (MoveAction) action;
+                this.hero.move(moveAction.getDirection(), this.currentHall);
+            }
+        }
+    }
+
     private void onTimerTick(int remainingTime) {
         System.out.println("Time remaining: " + remainingTime + " seconds");
     }
@@ -65,7 +76,7 @@ public class PlayMode implements GameState {
             currentHall = halls.get(nextHallIndex);
             System.out.println("Moving to the next hall: " + currentHall.getName());
             gameTimer.start(PlayMode.START_TIME);
-            hero.move(PlayMode.START_POSITION);
+            hero.setPosition(PlayMode.START_POSITION);
         } else {
             System.out.println("All halls completed. You win!");
         }
