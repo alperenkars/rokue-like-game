@@ -6,7 +6,7 @@ public class Cell {
 
     public Cell(Position position) {
         this.position = position;
-        this.content = null; // Empty by default
+        this.content = null;
     }
 
     public Position getPosition() {

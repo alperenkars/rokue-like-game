@@ -4,8 +4,18 @@ import com.rokue.game.util.Position;
 
 public class Rune {
 
+    protected Position position;
+
+    public Rune(Position position) {
+        this.position = position;
+    }
+
     public Position getPosition() {
-        return null;
+        return this.position;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
     }
 
     public void setCollected(boolean b) {

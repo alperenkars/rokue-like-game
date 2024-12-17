@@ -1,19 +1,19 @@
 package com.rokue.game;
 
+import com.rokue.game.input.IInputProvider;
+import com.rokue.game.render.IRenderer;
 import com.rokue.game.states.GameState;
-import com.rokue.game.states.MainMenu;
-import com.rokue.game.events.EventManager;
 
 public class GameSystem {
-
     private GameState currentState;
     private boolean isRunning;
-    private EventManager eventManager;
+    private IInputProvider inputProvider;
+    private IRenderer renderer;
 
-    public GameSystem() {
+    public GameSystem(IInputProvider inputProvider, IRenderer renderer) {
         this.isRunning = true;
-        this.eventManager = new EventManager();
-        setState(new MainMenu());
+        this.inputProvider = inputProvider;
+        this.renderer = renderer;
     }
 
     public void setState(GameState newState) {
@@ -24,25 +24,24 @@ public class GameSystem {
         currentState.enter(this);
     }
 
-    public EventManager getEventManager() {
-        return eventManager;
+    public void update() {
+        if (isRunning && currentState != null) {
+            currentState.update(this);
+        }
     }
 
-    public void start() {
-        System.out.println("Game Engine Started");
-        while (isRunning) {
-            update();
+    public void render() {
+        if (currentState != null && renderer != null) {
+            renderer.render(currentState);
         }
     }
 
     public void stop() {
         isRunning = false;
-        System.out.println("Game Engine Stopped");
+        System.out.println("Game Stopped");
     }
 
-    private void update() {
-        if (currentState != null) {
-            currentState.update(this);
-        }
+    public GameState getCurrentState() {
+        return currentState;
     }
 }
