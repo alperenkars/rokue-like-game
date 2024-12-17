@@ -1,20 +1,25 @@
 package com.rokue.ui;
 
-import com.rokue.game.render.IRenderer;
-import com.rokue.game.states.GameState;
-import com.rokue.game.states.PlayMode;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.swing.JPanel;
+
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
-import com.rokue.game.util.Position;
-import com.rokue.game.util.Cell;
+import com.rokue.game.render.IRenderer;
 import com.rokue.game.render.TileLoader;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
+import com.rokue.game.states.GameState;
+import com.rokue.game.states.PlayMode;
+import com.rokue.game.util.Position;
 
 public class PlayModeUI extends JPanel implements IRenderer {
     private PlayMode playMode;
@@ -22,18 +27,20 @@ public class PlayModeUI extends JPanel implements IRenderer {
     // Hall rendering constants
     private final int hallX = 20;
     private final int hallY = 20;
-    private final int cellCountX = 5;
-    private final int cellCountY = 5;
+    private final int cellCountX = 20;
+    private final int cellCountY = 20;
     private final int originalTileSize = 16;
-    private final int scaleFactor = 5;
-    private final int cellWidth = originalTileSize * scaleFactor;   // 80
-    private final int cellHeight = originalTileSize * scaleFactor;  // 80
-    private final int hallWidth = cellCountX * cellWidth;           // 400
-    private final int hallHeight = cellCountY * cellHeight;         // 400
+    private final int scaleFactor = 2;
+    private final int cellWidth = originalTileSize * scaleFactor;   // 32
+    private final int cellHeight = originalTileSize * scaleFactor;  // 32
+    private final int hallWidth = cellCountX * cellWidth;           // 640
+    private final int hallHeight = cellCountY * cellHeight;         // 640
 
     // UI panel coordinates
-    private final int uiX = hallX + hallWidth + 50; // 20 + 400 + 50 = 470
+    private final int uiX = hallX + hallWidth + 20;
     private final int uiTopY = 100;
+
+    private BufferedImage hallBackground;
 
     // Tileset loader and tiles
     private TileLoader tileLoader;
@@ -62,52 +69,44 @@ public class PlayModeUI extends JPanel implements IRenderer {
 
     public PlayModeUI(PlayMode playMode) {
         this.playMode = playMode;
-        setBackground(new Color(43, 27, 44));  // Dark purple background
-
-        // Initialize tile loader with the dungeon tileset
-        tileLoader = new TileLoader("/assets/0x72_16x16DungeonTileset.v5.png", 
-                                  originalTileSize, originalTileSize, scaleFactor);
-
-        // Load specific tiles from the tileset
-        floorTile = tileLoader.getTile(FLOOR_TILE_X, FLOOR_TILE_Y);
-        wallTile = tileLoader.getTile(WALL_TOP_X, WALL_TOP_Y);
+        setBackground(new Color(43, 27, 44));
 
         try {
+            // Load the hall background image
+            hallBackground = ImageIO.read(getClass().getResource("/assets/test_hall.png"));
             playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
             runeImage = ImageIO.read(getClass().getResource("/assets/cloakreveallure.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        setPreferredSize(new Dimension(hallX + hallWidth + 300, hallY + hallHeight + 50));
+        // Adjust panel size to accommodate hall and UI
+        setPreferredSize(new Dimension(hallX + hallWidth + 200, hallY + hallHeight + 40));
     }
 
-    private void drawHall(Graphics g, Hall hall) {
-        for (int y = 0; y < cellCountY; y++) {
-            for (int x = 0; x < cellCountX; x++) {
-                int screenX = hallX + x * cellWidth;
-                int screenY = hallY + y * cellHeight;
+    private void drawHall(Graphics2D g, Hall hall) {
+        // Draw hall background, scaling it to match our cell grid
+        if (hallBackground != null) {
+            // Draw the background image scaled to fit our hall dimensions
+            g.drawImage(hallBackground, 
+                       hallX, hallY,             // Destination x,y
+                       hallX + hallWidth,        // Destination width
+                       hallY + hallHeight,       // Destination height
+                       0, 0,                     // Source x,y
+                       hallBackground.getWidth(), // Source width
+                       hallBackground.getHeight(),// Source height
+                       null);
+        }
 
-                if (y == 0) {  // Top wall
-                    if (x == 0) {
-                        g.drawImage(tileLoader.getTile(CORNER_TL_X, CORNER_TL_Y), 
-                                  screenX, screenY, cellWidth, cellHeight, null);
-                    } else if (x == cellCountX - 1) {
-                        g.drawImage(tileLoader.getTile(CORNER_TR_X, CORNER_TR_Y), 
-                                  screenX, screenY, cellWidth, cellHeight, null);
-                    } else {
-                        g.drawImage(tileLoader.getTile(WALL_TOP_X, WALL_TOP_Y), 
-                                  screenX, screenY, cellWidth, cellHeight, null);
-                    }
-                } else if (y == cellCountY - 1) {  // Bottom wall
-                    // Similar logic for bottom wall...
-                } else if (x == 0 || x == cellCountX - 1) {  // Side walls
-                    g.drawImage(tileLoader.getTile(WALL_SIDE_X, WALL_SIDE_Y), 
-                              screenX, screenY, cellWidth, cellHeight, null);
-                } else {  // Floor
-                    g.drawImage(floorTile, screenX, screenY, cellWidth, cellHeight, null);
-                }
-            }
+        // Draw grid for debugging (comment out in production)
+        g.setColor(new Color(255, 255, 255, 30));  // Semi-transparent white
+        for (int x = 0; x <= cellCountX; x++) {
+            g.drawLine(hallX + x * cellWidth, hallY, 
+                      hallX + x * cellWidth, hallY + hallHeight);
+        }
+        for (int y = 0; y <= cellCountY; y++) {
+            g.drawLine(hallX, hallY + y * cellHeight, 
+                      hallX + hallWidth, hallY + y * cellHeight);
         }
     }
 
@@ -124,7 +123,6 @@ public class PlayModeUI extends JPanel implements IRenderer {
         super.paintComponent(g);
         if (playMode == null) return;
 
-        // Enable antialiasing for smoother rendering
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
                             RenderingHints.VALUE_ANTIALIAS_ON);
@@ -132,19 +130,46 @@ public class PlayModeUI extends JPanel implements IRenderer {
         Hall hall = playMode.getCurrentHall();
         Hero hero = playMode.getHero();
 
-        // Draw the hall
+        // Draw the hall background
         drawHall(g2d, hall);
 
+        // Draw game objects
+        drawGameObjects(g2d, hall);
+
+        // Draw UI elements
+        drawUI(g2d, hero);
+    }
+
+    private void drawGameObjects(Graphics2D g, Hall hall) {
         // Draw hero
+        Hero hero = playMode.getHero();
         Position heroPos = hero.getPosition();
         int heroX = hallX + heroPos.getX() * cellWidth;
         int heroY = hallY + heroPos.getY() * cellHeight;
         if (playerImage != null) {
-            g2d.drawImage(playerImage, heroX, heroY, cellWidth, cellHeight, null);
+            // Center the hero in the cell
+            g.drawImage(playerImage, 
+                       heroX + (cellWidth - playerImage.getWidth(null))/2, 
+                       heroY + (cellHeight - playerImage.getHeight(null))/2, 
+                       cellWidth, cellHeight, null);
         }
 
-        // Draw UI elements
-        drawUI(g2d, hero);
+        // Draw rune if it exists
+        Rune rune = hall.getRune();
+        if (rune != null) {
+            Position runePos = rune.getPosition();
+            int runeX = hallX + runePos.getX() * cellWidth;
+            int runeY = hallY + runePos.getY() * cellHeight;
+            if (runeImage != null) {
+                // Center the rune in the cell
+                g.drawImage(runeImage, 
+                           runeX + (cellWidth - runeImage.getWidth(null))/2, 
+                           runeY + (cellHeight - runeImage.getHeight(null))/2, 
+                           cellWidth, cellHeight, null);
+            }
+        }
+
+        // Draw other game objects here...
     }
 
     private void drawUI(Graphics2D g, Hero hero) {

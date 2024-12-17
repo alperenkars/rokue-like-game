@@ -24,10 +24,14 @@ public class Hero {
         Position newPosition = position;
         switch (direction) {
             case UP:
-                newPosition = new Position(position.getX(), position.getY() - 1);
+                if (position.getY() > 1) {
+                    newPosition = new Position(position.getX(), position.getY() - 1);
+                }
                 break;
             case DOWN:
-                newPosition = new Position(position.getX(), position.getY() + 1);
+                if (position.getY() < currentHall.getHeight() - 2) {
+                    newPosition = new Position(position.getX(), position.getY() + 1);
+                }
                 break;
             case LEFT:
                 newPosition = new Position(position.getX() - 1, position.getY());
@@ -42,7 +46,6 @@ public class Hero {
         } else {
             System.out.println("Cannot move outside the hall boundaries.");
         }
-
     }
 
     public void interactWithCell(Cell cell, Hall currentHall) {

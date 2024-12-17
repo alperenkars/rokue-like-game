@@ -24,7 +24,7 @@ public class PlayMode implements GameState {
 
     public PlayMode(List<Hall> halls, Hero hero, EventManager eventManager) {
         this.halls = halls;
-        this.currentHall = halls.getFirst();
+        this.currentHall = halls.get(0);
         this.hero = hero;
         this.eventManager = eventManager;
         this.gameTimer = new GameTimer(eventManager);
