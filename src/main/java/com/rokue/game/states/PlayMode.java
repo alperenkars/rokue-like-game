@@ -1,15 +1,15 @@
 package com.rokue.game.states;
 
+import java.util.List;
+
 import com.rokue.game.GameSystem;
+import com.rokue.game.GameTimer;
 import com.rokue.game.actions.IAction;
 import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
-import com.rokue.game.GameTimer;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Position;
-
-import java.util.List;
 
 public class PlayMode implements GameState {
 
