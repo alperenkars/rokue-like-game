@@ -39,7 +39,6 @@ public class PlayMode implements GameState {
 
     public void update(GameSystem system) {
         currentHall.update(hero);
-
     }
 
     public void exit(GameSystem system) {
@@ -70,5 +69,17 @@ public class PlayMode implements GameState {
         } else {
             System.out.println("All halls completed. You win!");
         }
+    }
+
+    public Hall getCurrentHall() {
+        return currentHall;
+    }
+
+    public Hero getHero() {
+        return hero;
+    }
+
+    public int getRemainingTime() {
+        return gameTimer.getRemainingTime();
     }
 }
