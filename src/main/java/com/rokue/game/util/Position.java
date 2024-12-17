@@ -29,4 +29,10 @@ public class Position {
         return x == position.getX() && y == position.getY();
     }
 
+    public double distanceTo(Position other) {
+        int dx = this.x - other.x;
+        int dy = this.y - other.y;
+        return Math.sqrt(dx * dx + dy * dy);
+
+    }
 }

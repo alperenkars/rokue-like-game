@@ -1,31 +1,26 @@
 package com.rokue.game.entities.monsters;
 
-import com.rokue.game.behaviour.MonsterBehaviour;
-import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
+import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Position;
+
 
 public abstract class Monster {
     protected Position position;
-    private MonsterBehaviour behaviour;
+    protected EventManager eventManager;
 
-    public Monster(Position startPosition, MonsterBehaviour behaviour) {
-        this.position = startPosition;
-        this.behaviour = behaviour;
+    public Monster(Position position, EventManager eventManager) {
+        this.position = position;
+        this.eventManager = eventManager;
     }
-
     public Position getPosition() {
         return position;
     }
 
-    public void setPosition(Position position) {
-        this.position = position;
+    public EventManager getEventManager() {
+        return eventManager;
     }
 
-    public abstract void move();
-
-    public void update(Hero hero, Hall hall) {
-        behaviour.act(hero, hall);
-    }
+    public abstract void update(Hero hero);
 
 }
