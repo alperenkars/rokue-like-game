@@ -18,10 +18,6 @@ public abstract class Monster {
         return position;
     }
 
-    public void performAction(Hero hero, Hall hall) {
-        behaviour.act(hero, hall);
-    }
-
     public void setPosition(Position position) {
         this.position = position;
     }
@@ -29,9 +25,7 @@ public abstract class Monster {
     public abstract void move();
 
     public void update(Hero hero, Hall hall) {
-        System.out.println("FighterMonster: Moving randomly!");
-        Position newPosition = hall.getNeighbors(position).getFirst().getPosition();
-        setPosition(newPosition);
+        behaviour.act(hero, hall);
     }
 
 }

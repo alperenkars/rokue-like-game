@@ -1,6 +1,8 @@
 package com.rokue.game.states;
 
 import com.rokue.game.GameSystem;
+import com.rokue.game.actions.IAction;
+import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.GameTimer;
@@ -22,14 +24,14 @@ public class PlayMode implements GameState {
 
     public PlayMode(List<Hall> halls, Hero hero, EventManager eventManager) {
         this.halls = halls;
-        this.currentHall = halls.getFirst();
+        this.currentHall = halls.get(0);
         this.hero = hero;
         this.eventManager = eventManager;
-        this.gameTimer = new GameTimer(eventManager);
     }
 
     public void enter(GameSystem system) {
         System.out.println("Entering Play Mode");
+        this.gameTimer = new GameTimer(eventManager);
         this.gameTimer.start(PlayMode.START_TIME);
 
         eventManager.subscribe("TIMER_TICK", (eventType, data) -> onTimerTick((int) data));
@@ -39,15 +41,25 @@ public class PlayMode implements GameState {
 
     public void update(GameSystem system) {
         currentHall.update(hero);
-
     }
 
     public void exit(GameSystem system) {
         System.out.println("Exiting Play Mode");
-        gameTimer.stop();
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
         eventManager.unsubscribe("TIMER_TICK", null);
         eventManager.unsubscribe("TIME_EXPIRED", null);
         eventManager.unsubscribe("RUNE_COLLECTED", null);
+    }
+
+    public void handleActions(List<IAction> actions) {
+        for (IAction action : actions) {
+            if (action instanceof MoveAction) {
+                MoveAction moveAction = (MoveAction) action;
+                this.hero.move(moveAction.getDirection(), this.currentHall);
+            }
+        }
     }
 
     private void onTimerTick(int remainingTime) {
@@ -66,9 +78,22 @@ public class PlayMode implements GameState {
             currentHall = halls.get(nextHallIndex);
             System.out.println("Moving to the next hall: " + currentHall.getName());
             gameTimer.start(PlayMode.START_TIME);
-            hero.move(PlayMode.START_POSITION);
+            hero.setPosition(PlayMode.START_POSITION);
         } else {
+            eventManager.notify("GAME_COMPLETED", null);
             System.out.println("All halls completed. You win!");
         }
+    }
+
+    public Hall getCurrentHall() {
+        return currentHall;
+    }
+
+    public Hero getHero() {
+        return hero;
+    }
+
+    public int getRemainingTime() {
+        return gameTimer.getRemainingTime();
     }
 }
