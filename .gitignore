@@ -1,4 +1,8 @@
-.idea
-.DS_Store
-out
+/.idea
+/.DS_Store
+/src/.DS_Store
+/out
+/src/main/.DS_Store
 target
+/src/main/resources/.DS_Store
+.DS_Store

@@ -1,11 +1,8 @@
-package com.rokue.game.states;
+package com.rokue.ui.components;
 
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 
 public class ImageBorder implements Border {
     private BufferedImage borderImage;

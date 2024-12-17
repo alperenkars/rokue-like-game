@@ -1,19 +1,23 @@
 package com.rokue.game;
 
+import java.awt.event.KeyListener;
 import java.util.Arrays;
 import java.util.List;
-import javax.swing.*;
+
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.input.GUIInputProvider;
-import com.rokue.game.states.PlayMode;
 import com.rokue.game.states.MainMenu;
+import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
-import com.rokue.ui.PlayModeUI;
 import com.rokue.ui.MainMenuUI;
+import com.rokue.ui.PlayModeUI;
 
 public class Main {
     public static void main(String[] args) {
@@ -46,11 +50,24 @@ public class Main {
             });
 
             eventManager.subscribe("START_GAME", (eventType, data) -> {
-                gameSystem.setState(playMode);
+                // Create a new PlayMode instance
+                PlayMode newPlayMode = createPlayMode(eventManager);
+                PlayModeUI newPlayModeUI = new PlayModeUI(newPlayMode);
+                gameSystem.setRenderer(newPlayModeUI);
+                gameSystem.setState(newPlayMode);
+                
                 frame.getContentPane().removeAll();
-                frame.add(playModeUI);
+                frame.add(newPlayModeUI);
                 frame.revalidate();
                 frame.repaint();
+
+                for (KeyListener kl : frame.getKeyListeners()) {
+                    frame.removeKeyListener(kl);
+                }
+
+                frame.addKeyListener(inputProvider);
+                frame.setFocusable(true);
+                frame.requestFocusInWindow();
             });
 
             // Set initial state and screen

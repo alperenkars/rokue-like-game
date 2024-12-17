@@ -14,7 +14,6 @@ public class MainMenu implements GameState{
     }
 
     public void update(GameSystem system) {
-        System.out.println("Updating Main Menu");
     }
 
     public void exit(GameSystem system) {

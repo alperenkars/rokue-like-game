@@ -21,7 +21,9 @@ public class GameSystem {
             currentState.exit(this);
         }
         currentState = newState;
-        currentState.enter(this);
+        if (currentState != null) {
+            currentState.enter(this);
+        }
     }
 
     public void update() {
@@ -43,5 +45,9 @@ public class GameSystem {
 
     public GameState getCurrentState() {
         return currentState;
+    }
+
+    public void setRenderer(IRenderer renderer) {
+        this.renderer = renderer;
     }
 }
