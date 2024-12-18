@@ -6,7 +6,7 @@ import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.util.Position;
 
-class WizardMonster extends Monster {
+public class WizardMonster extends Monster {
     public WizardMonster(Position startPosition) {
         super(startPosition, new TeleportRune());
     }

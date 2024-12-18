@@ -6,7 +6,7 @@ import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.monsters.Monster;
 import com.rokue.game.util.Position;
 
-class FighterMonster extends Monster {
+public class FighterMonster extends Monster {
     public FighterMonster(Position startPosition) {
         super(startPosition, new StabDagger());
     }

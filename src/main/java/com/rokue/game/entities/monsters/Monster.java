@@ -7,7 +7,7 @@ import com.rokue.game.util.Position;
 
 public abstract class Monster {
     protected Position position;
-    private MonsterBehaviour behaviour;
+    protected MonsterBehaviour behaviour;
 
     public Monster(Position startPosition, MonsterBehaviour behaviour) {
         this.position = startPosition;
@@ -15,6 +15,7 @@ public abstract class Monster {
     }
 
     public Position getPosition() {
+
         return position;
     }
 
@@ -28,4 +29,13 @@ public abstract class Monster {
         behaviour.act(hero, hall);
     }
 
+    public MonsterBehaviour getBehaviour() {
+        return behaviour;
+    }
+
+    public void setBehaviour(MonsterBehaviour behaviour) {
+        this.behaviour = behaviour;
+    }
 }
+
+
