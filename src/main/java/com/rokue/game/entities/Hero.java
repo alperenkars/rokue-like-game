@@ -1,5 +1,7 @@
 package com.rokue.game.entities;
 
+import com.rokue.game.actions.MoveAction;
+import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
@@ -27,9 +29,32 @@ public class Hero {
         return position;
     }
 
-    public void move(Position newPosition) {
-        this.position = newPosition;
-        eventManager.notify("HERO_MOVED", this.position);
+    public void move(MoveAction.Direction direction, Hall currentHall) {
+        Position newPosition = position;
+        switch (direction) {
+            case UP:
+                if (position.getY() > 1) {
+                    newPosition = new Position(position.getX(), position.getY() - 1);
+                }
+                break;
+            case DOWN:
+                if (position.getY() < currentHall.getHeight() - 2) {
+                    newPosition = new Position(position.getX(), position.getY() + 1);
+                }
+                break;
+            case LEFT:
+                newPosition = new Position(position.getX() - 1, position.getY());
+                break;
+            case RIGHT:
+                newPosition = new Position(position.getX() + 1, position.getY());
+                break;
+        }
+
+        if (currentHall != null && currentHall.getCell(newPosition) != null) {
+            this.position = newPosition;
+        } else {
+            System.out.println("Cannot move outside the hall boundaries.");
+        }
     }
 
     public void interactWithCell(Cell cell, Hall currentHall) {
@@ -43,32 +68,29 @@ public class Hero {
         if (cell.getContent() instanceof Enchantment) {
             Enchantment enchantment = (Enchantment) cell.getContent();
             enchantment.applyEffect(this);
-            cell.setContent(null); // Enchantment alındıktan sonra hücre boşaltılır
+            cell.setContent(null);
             System.out.println("Hero: Collected enchantment - " + enchantment.getClass().getSimpleName());
         }
     }
 
     public void decreaseLife() {
         lives--;
-        eventManager.notify("HERO_LIFE_CHANGED", this.lives);
-
         if (lives <= 0) {
             System.out.println("Hero: Out of lives. Game Over!");
             eventManager.notify("HERO_DEAD", null);
-        } else {
-            System.out.println("Hero: Lost a life. Remaining lives: " + lives);
-            eventManager.notify("HERO_HIT", this.lives);
         }
     }
 
-    public void increaseLife(int amount) {
-        this.lives += amount;
-        eventManager.notify("HERO_LIFE_CHANGED", this.lives);
-        System.out.println("Hero: Gained " + amount + " life(s). Total lives: " + lives);
+    public void increaseLife() {
+        this.lives++;
     }
 
     public int getLives() {
         return lives;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
     }
 
     public EventManager getEventManager() {
@@ -78,27 +100,14 @@ public class Hero {
 
     public void addToBag(Enchantment enchantment) {
         bag.add(enchantment);
-        eventManager.notify("ENCHANTMENT_ADDED_TO_BAG", enchantment);
         System.out.println("Hero: Enchantment added to bag - " + enchantment.getClass().getSimpleName());
     }
 
 
     public void removeFromBag(Enchantment enchantment) {
         bag.remove(enchantment);
-        eventManager.notify("ENCHANTMENT_REMOVED_FROM_BAG", enchantment);
         System.out.println("Hero: Enchantment removed from bag - " + enchantment.getClass().getSimpleName());
     }
-
-
-    public <T extends Enchantment> T findEnchantment(Class<T> clazz) {
-        for (Enchantment e : bag) {
-            if (clazz.isInstance(e)) {
-                return clazz.cast(e);
-            }
-        }
-        return null;
-    }
-
 
     public void useEnchantment(Enchantment enchantment) {
         if (bag.contains(enchantment) && enchantment.isCollected()) {
