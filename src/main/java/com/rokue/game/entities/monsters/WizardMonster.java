@@ -19,6 +19,8 @@ class WizardMonster extends Monster {
         }
     }
 
-  
+    public void move() {
+        return; // This monster does not move but this method is required by the abstract class.
+    }
 
 }
