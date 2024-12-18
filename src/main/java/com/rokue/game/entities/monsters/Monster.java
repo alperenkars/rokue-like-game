@@ -23,6 +23,7 @@ public abstract class Monster {
     }
 
     public abstract void move();
+    public abstract void move(Hall hall);
 
     public void update(Hero hero, Hall hall) {
         behaviour.act(hero, hall);

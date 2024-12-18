@@ -15,4 +15,8 @@ class ArcherMonster extends Monster {
         System.out.println("ArcherMonster: Moving towards the hero!");
     }
 
+    public void move(Hall hall){
+        return; //This monster does not use, but the Fighter Monster does.
+    }
+
 }

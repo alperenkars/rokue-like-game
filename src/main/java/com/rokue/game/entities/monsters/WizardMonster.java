@@ -23,4 +23,8 @@ class WizardMonster extends Monster {
         return; // This monster does not move but this method is required by the abstract class.
     }
 
+    public void move(Hall hall){
+        return; //This monster does not use, but the Fighter Monster does.
+    }
+
 }

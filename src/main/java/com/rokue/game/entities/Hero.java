@@ -1,5 +1,6 @@
 package com.rokue.game.entities;
 
+import com.rokue.game.entities.enchantments.*;
 import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.events.EventManager;
@@ -10,6 +11,7 @@ public class Hero {
     private Position position;
     private int lives;
     private EventManager eventManager;
+    private boolean hasCloakOfProtection;
 
     public Hero(Position startPosition, EventManager eventManager) {
         this.position = startPosition;
@@ -57,6 +59,17 @@ public class Hero {
 
             eventManager.notify("RUNE_COLLECTED", currentHall);
         }
+    }
+
+    public void applyEnchantment(Enchantment enchantment) {
+        enchantment.applyEffect(this);
+        if (enchantment instanceof CloakOfProtection) {
+            hasCloakOfProtection = true;
+        }
+    }
+
+    public boolean hasCloakOfProtection() {
+        return hasCloakOfProtection;
     }
 
     public void decreaseLife() {

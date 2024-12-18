@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
+import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.render.IRenderer;
 import com.rokue.game.render.TileLoader;
 import com.rokue.game.states.GameState;
@@ -50,6 +51,8 @@ public class PlayModeUI extends JPanel implements IRenderer {
     // Entities
     private BufferedImage playerImage;
     private BufferedImage runeImage;
+    private BufferedImage fighterMonsterImage;
+    private BufferedImage luringGemImage;
 
     // Define tile positions in the tileset
     private static final int FLOOR_TILE_X = 6;  // Dark floor tile position
@@ -76,6 +79,8 @@ public class PlayModeUI extends JPanel implements IRenderer {
             hallBackground = ImageIO.read(getClass().getResource("/assets/test_hall.png"));
             playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
             runeImage = ImageIO.read(getClass().getResource("/assets/cloakreveallure.png"));
+            fighterMonsterImage = ImageIO.read(getClass().getResource("/assets/fighter.png"));
+            luringGemImage = ImageIO.read(getClass().getResource("/assets/splitted_gem_cloakreveallure4x.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -169,6 +174,18 @@ public class PlayModeUI extends JPanel implements IRenderer {
             }
         }
 
+        //fighter monsters drawing
+        for (FighterMonster monster : playMode.getFighterMonsters()) {
+            Position monsterPos = monster.getPosition();
+            int monsterX = hallX + monsterPos.getX() * cellWidth;
+            int monsterY = hallY + monsterPos.getY() * cellHeight;
+            if (fighterMonsterImage != null) {
+                g.drawImage(fighterMonsterImage, 
+                           monsterX + (cellWidth - fighterMonsterImage.getWidth(null))/2, 
+                           monsterY + (cellHeight - fighterMonsterImage.getHeight(null))/2, 
+                           cellWidth, cellHeight, null);
+            }
+        }
         // Draw other game objects here...
     }
 
