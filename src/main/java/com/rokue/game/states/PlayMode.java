@@ -119,6 +119,7 @@ public class PlayMode implements GameState {
 public void pause() {
     this.paused = true;
     gameTimer.pause();
+    
     // if there is any pause-specific logic to be added, add them later
 }
 
