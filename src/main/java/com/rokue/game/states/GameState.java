@@ -6,4 +6,5 @@ public interface GameState {
     void enter(GameSystem system);
     void update(GameSystem system);
     void exit(GameSystem system);
+ 
 }
