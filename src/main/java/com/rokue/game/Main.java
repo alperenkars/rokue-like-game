@@ -99,7 +99,7 @@ public class Main {
     }
 
     private static PlayMode createPlayMode(EventManager eventManager) {
-        Hall hall = new Hall("Test Hall", 20, 20);
+        Hall hall = new Hall("Test Hall", 20, 20, 1); //CHANGE MIN OBJECTS LATER
         Rune rune = new Rune(new Position(2, 2));
         hall.setRune(rune);
 
@@ -108,4 +108,5 @@ public class Main {
         
         return new PlayMode(halls, hero, eventManager);
     }
+
 }

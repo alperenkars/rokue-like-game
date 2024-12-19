@@ -14,10 +14,19 @@ public class BuildMode implements GameState {
     private Hall currentHall; // Currently active hall
     private DungeonObject selectedObject; // Object being placed
 
-    public BuildMode(List<Hall> halls) {
-        this.halls = halls;
-        this.currentHall = halls.get(0); // Start with the first hall
+    public BuildMode() {
+        this.halls = new ArrayList<>();
+
+        // Adding halls with their distinct names and minimum object requirements
+        halls.add(new Hall("Earth Hall", 20, 20, 6));   // Earth Hall: min 6 objects
+        halls.add(new Hall("Air Hall", 20, 20, 9));    // Air Hall: min 9 objects
+        halls.add(new Hall("Water Hall", 20, 20, 13)); // Water Hall: min 13 objects
+        halls.add(new Hall("Fire Hall", 20, 20, 17));  // Fire Hall: min 17 objects
+
+        currentHall = halls.get(0);
+
     }
+
 
     @Override
     public void enter(GameSystem system) {
@@ -74,6 +83,15 @@ public class BuildMode implements GameState {
         // Add object to the hall
         object.setPosition(position);
         hall.addObject(object, position);
+        return true;
+    }
+
+    public boolean areAllHallsSatisfied() {
+        for (Hall hall : halls) {
+            if (!hall.isRequirementMet()) {
+                return false;
+            }
+        }
         return true;
     }
 
