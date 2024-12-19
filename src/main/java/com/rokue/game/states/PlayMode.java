@@ -50,7 +50,6 @@ public class PlayMode implements GameState {
         this.gameTimer.start(PlayMode.START_TIME);
 
         Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
-        rune.moveRandomly(currentHall);
         currentHall.setRune(rune);
 
         registerEventHandlers();
@@ -80,6 +79,12 @@ public class PlayMode implements GameState {
                 rune.moveRandomly(currentHall);
                 System.out.println("PlayMode: Rune teleported by wizard!");
             }
+        });
+
+        eventManager.subscribe("HERO_DEAD", (eventType, data) -> {
+            gameTimer.stop();
+            System.out.println("PlayMode: Hero is dead. Game Over!");
+            eventManager.notify("GAME_OVER", null);
         });
     }
 
@@ -142,6 +147,8 @@ public class PlayMode implements GameState {
             System.out.println("Moving to the next hall: " + currentHall.getName());
             gameTimer.start(PlayMode.START_TIME);
             hero.setPosition(PlayMode.START_POSITION);
+            Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
+            currentHall.setRune(rune);
         } else {
             eventManager.notify("GAME_COMPLETED", null);
             System.out.println("All halls completed. You win!");

@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -77,20 +78,20 @@ public class PlayModeUI extends JPanel implements IRenderer {
         requestFocusInWindow();
 
         try {
-            playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
-            runeImage = ImageIO.read(getClass().getResource("/assets/rune.png"));
+            playerImage = ImageIO.read(new File("src/main/resources/assets/player.png"));
+            runeImage = ImageIO.read(new File("src/main/resources/assets/rune.png"));
 
             // Load monster images
-            archerImage = ImageIO.read(getClass().getResource("/assets/archer.png"));
-            fighterImage = ImageIO.read(getClass().getResource("/assets/fighter.png"));
-            wizardImage = ImageIO.read(getClass().getResource("/assets/wizard.png"));
+            archerImage = ImageIO.read(new File("src/main/resources/assets/archer.png"));
+            fighterImage = ImageIO.read(new File("src/main/resources/assets/fighter.png"));
+            wizardImage = ImageIO.read(new File("src/main/resources/assets/wizard.png"));
 
 //            // Load enchantment images
-//            extraTimeImage = ImageIO.read(getClass().getResource("/assets/extratime.png"));
-//            revealImage = ImageIO.read(getClass().getResource("/assets/reveal.png"));
-//            cloakImage = ImageIO.read(getClass().getResource("/assets/cloak.png"));
-//            luringGemImage = ImageIO.read(getClass().getResource("/assets/luringgem.png"));
-//            extraLifeImage = ImageIO.read(getClass().getResource("/assets/extralife.png"));
+//            extraTimeImage = ImageIO.read(new File("src/main/resources/assets/extratime.png"));
+//            revealImage = ImageIO.read(new File("src/main/resources/assets/reveal.png"));
+//            cloakImage = ImageIO.read(new File("src/main/resources/assets/cloak.png"));
+//            luringGemImage = ImageIO.read(new File("src/main/resources/assets/luringgem.png"));
+//            extraLifeImage = ImageIO.read(new File("src/main/resources/assets/extralife.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
