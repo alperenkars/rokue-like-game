@@ -64,7 +64,12 @@ public class PlayMode implements GameState {
             System.out.println("PlayMode: Hero stabbed by fighter! Lives remaining: " + hero.getLives());
         });
 
-        eventManager.subscribe("HERO_HIT_BY_ARROW", (eventType, data) -> {
+        // Rune collected event
+        eventManager.subscribe("RUNE_COLLECTED", (eventType, data) -> {
+            onRuneCollected();
+        });
+
+        eventManager.subscribe("RUNE_TELEPORTED", (eventType, data) -> {
             Rune rune = currentHall.getRune();
             if (rune != null) {
                 rune.moveRandomly(currentHall);
