@@ -11,6 +11,7 @@ import com.rokue.game.actions.IAction;
 import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
+import com.rokue.game.entities.Rune;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Position;
 import com.rokue.game.entities.monsters.Monster;
@@ -46,7 +47,30 @@ public class PlayMode implements GameState {
         this.gameTimer = new GameTimer(eventManager);
         this.gameTimer.start(PlayMode.START_TIME);
 
-        eventManager.subscribe("RUNE_COLLECTED", (eventType, data) -> onRuneCollected());
+        // Register event handlers for monster interactions
+        registerMonsterEventHandlers();
+    }
+
+    private void registerMonsterEventHandlers() {
+        // Arrow hit event
+        eventManager.subscribe("HERO_HIT_BY_ARROW", (eventType, data) -> {
+            hero.decreaseLife();
+            System.out.println("PlayMode: Hero hit by arrow! Lives remaining: " + hero.getLives());
+        });
+
+        // Stab event
+        eventManager.subscribe("HERO_STABBED", (eventType, data) -> {
+            hero.decreaseLife();
+            System.out.println("PlayMode: Hero stabbed by fighter! Lives remaining: " + hero.getLives());
+        });
+
+        eventManager.subscribe("HERO_HIT_BY_ARROW", (eventType, data) -> {
+            Rune rune = currentHall.getRune();
+            if (rune != null) {
+                rune.moveRandomly(currentHall);
+                System.out.println("PlayMode: Rune teleported by wizard!");
+            }
+        });
     }
 
     public void update(GameSystem system) {
