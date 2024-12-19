@@ -13,6 +13,7 @@ import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.input.GUIInputProvider;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
@@ -34,6 +35,7 @@ public class Main {
 
             GameSystem gameSystem = new GameSystem(inputProvider, playModeUI);
             
+            // Setup main window
             JFrame frame = new JFrame("Rokue-like Game");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.addKeyListener(inputProvider);
@@ -41,14 +43,6 @@ public class Main {
             frame.setResizable(false);
 
             eventManager.subscribe("GAME_COMPLETED", (eventType, data) -> {
-                gameSystem.setState(mainMenu);
-                frame.getContentPane().removeAll();
-                frame.add(mainMenuUI);
-                frame.revalidate();
-                frame.repaint();
-            });
-
-            eventManager.subscribe("TIME_EXPIRED", (eventType, data) -> {
                 gameSystem.setState(mainMenu);
                 frame.getContentPane().removeAll();
                 frame.add(mainMenuUI);
@@ -86,12 +80,28 @@ public class Main {
             // Start game loop
             int delay = 16; // approximately 60 FPS
             new Timer(delay, e -> {
-                var actions = inputProvider.pollActions();
-                if(gameSystem.getCurrentState() instanceof PlayMode) {
-                    ((PlayMode)gameSystem.getCurrentState()).handleActions(actions);
+                GameState currentState = gameSystem.getCurrentState();
+                boolean isPaused = false;
+
+                if (currentState instanceof PlayMode) {
+                    PlayMode currentPlayMode = (PlayMode) currentState;
+                    isPaused = currentPlayMode.isPaused();
+                    
+                    // Clear inputs when transitioning to paused state
+                    if (isPaused) {
+                        inputProvider.clearActions();
+                    }
                 }
 
-                gameSystem.update();
+                if (!isPaused) {
+                    var actions = inputProvider.pollActions();
+                    if (currentState instanceof PlayMode) {
+                        ((PlayMode)currentState).handleActions(actions);
+                    }
+                    gameSystem.update();
+                }
+                
+                // Always render
                 gameSystem.render();
             }).start();
         });

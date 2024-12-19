@@ -44,6 +44,11 @@ public class GUIInputProvider extends KeyAdapter implements IInputProvider {
         return currentActions;
     }
 
+    //for pause
+    public void clearActions() {
+        actions.clear();
+    }
+
     public void pause() {
         isPaused = true;
         actions.clear(); // Clear pending actions
