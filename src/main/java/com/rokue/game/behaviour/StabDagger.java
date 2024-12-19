@@ -6,7 +6,7 @@ import com.rokue.game.entities.monsters.Monster;
 public class StabDagger implements MonsterBehaviour {
     public void act(Hero hero, Monster monster) {
         double dist = monster.getPosition().distance(hero.getPosition());
-        if (dist <= 1.0) {
+        if (dist <= 1.0) { // Distance of 1.0 means adjacent (including diagonals)
             System.out.println("Stab Dagger: The fighter stabs the hero!");
             hero.getEventManager().notify("HERO_STABBED", null);
         } else {
