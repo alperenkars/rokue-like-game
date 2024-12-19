@@ -49,7 +49,7 @@ public class Hero {
         }
     }
 
-    public void interactWithCell(Cell cell, Hall currentHall) {
+    public void interactWithRune(Cell cell, Hall currentHall) {
         if (cell.getContent() instanceof Rune) {
             Rune rune = (Rune) cell.getContent();
             rune.setCollected(true);
