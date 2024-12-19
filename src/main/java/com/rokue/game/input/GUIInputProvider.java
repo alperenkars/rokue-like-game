@@ -16,6 +16,7 @@ public class GUIInputProvider extends KeyAdapter implements IInputProvider {
         switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
                 actions.add(new MoveAction(MoveAction.Direction.UP));
+                System.out.println("GUIInputProvider: MoveAction(Direction.UP) added to actions.");
                 break;
             case KeyEvent.VK_DOWN:
                 actions.add(new MoveAction(MoveAction.Direction.DOWN));
@@ -26,7 +27,6 @@ public class GUIInputProvider extends KeyAdapter implements IInputProvider {
             case KeyEvent.VK_RIGHT:
                 actions.add(new MoveAction(MoveAction.Direction.RIGHT));
                 break;
-            default:
                 // Şimdilik enchantment inputlarını atlıyorum.
         }
     }

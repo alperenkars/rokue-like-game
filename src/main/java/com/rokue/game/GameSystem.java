@@ -39,11 +39,10 @@ public class GameSystem {
         });
 
         eventManager.subscribe("SWITCH_TO_PLAY_MODE", (eventType, data) -> {
-            @SuppressWarnings("unchecked")
-            List<Hall> configuredHalls = (List<Hall>) data;
+            List<Hall> halls = (List<Hall>) data;
             Hero hero = new Hero(PlayMode.START_POSITION, eventManager);
-            PlayMode playMode = new PlayMode(configuredHalls, hero, eventManager);
-            PlayModeUI playModeUI = new PlayModeUI(playMode);
+            PlayMode playMode = new PlayMode(halls, hero, eventManager);
+            PlayModeUI playModeUI = new PlayModeUI(playMode, gameWindow);
             transitionTo(playMode, playModeUI);
         });
 
@@ -82,13 +81,7 @@ public class GameSystem {
 
     public void update() {
         if (currentState != null) {
-            if (inputProvider != null) {
-                if (currentState instanceof PlayMode) {
-                    var actions = inputProvider.pollActions();
-                    ((PlayMode) currentState).handleActions(actions);
-                }
-                currentState.update(this);
-            }
+            currentState.update(this);
         }
     }
 

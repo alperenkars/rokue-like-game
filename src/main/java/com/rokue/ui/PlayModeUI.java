@@ -6,17 +6,18 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
-import com.rokue.game.entities.Rune;
-import com.rokue.game.entities.enchantments.*;
 import com.rokue.game.entities.monsters.ArcherMonster;
 import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
@@ -28,6 +29,7 @@ import com.rokue.game.util.Position;
 
 public class PlayModeUI extends JPanel implements IRenderer {
     private PlayMode playMode;
+    private JFrame gameWindow;
 
     // Hall rendering constants (matching BuildModeUI)
     private final int hallX = 20;
@@ -57,11 +59,23 @@ public class PlayModeUI extends JPanel implements IRenderer {
     private BufferedImage luringGemImage;
     private BufferedImage extraLifeImage;
 
-    public PlayModeUI(PlayMode playMode) {
+    public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
         this.playMode = playMode;
+        this.gameWindow = gameWindow;
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(hallX + hallWidth + uiPanelWidth + 40, 
                                      hallY + hallHeight + 80));
+
+        // Make the panel focusable to receive keyboard events
+        setFocusable(true);
+        
+        // Add key listener from the game window
+        for (KeyListener listener : gameWindow.getKeyListeners()) {
+            addKeyListener(listener);
+        }
+        
+        // Request focus when created
+        requestFocusInWindow();
 
         try {
             playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
