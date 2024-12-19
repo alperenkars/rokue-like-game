@@ -2,7 +2,6 @@ package com.rokue.game.entities.enchantments;
 
 import com.rokue.game.entities.Hero;
 import com.rokue.game.util.Position;
-import javafx.geometry.Pos;
 
 public class ExtraTime extends Enchantment {
     private int timeToAdd;

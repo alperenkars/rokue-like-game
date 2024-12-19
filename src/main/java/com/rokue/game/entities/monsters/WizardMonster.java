@@ -11,16 +11,4 @@ public class WizardMonster extends Monster {
         super(startPosition, new TeleportRune());
     }
 
-    @Override
-    public void update(Hero hero, Hall hall) {
-        System.out.println("WizardMonster: Teleporting rune!");
-        if (hall.getRune() != null) {
-            hall.getRune().moveRandomly(hall);
-        }
-    }
-
-    public void move() {
-        return; // This monster does not move but this method is required by the abstract class.
-    }
-
 }

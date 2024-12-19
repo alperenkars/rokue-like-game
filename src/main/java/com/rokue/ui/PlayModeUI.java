@@ -15,8 +15,12 @@ import javax.swing.JPanel;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
+import com.rokue.game.entities.enchantments.*;
+import com.rokue.game.entities.monsters.ArcherMonster;
+import com.rokue.game.entities.monsters.FighterMonster;
+import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.render.IRenderer;
-import com.rokue.game.render.TileLoader;
 import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
@@ -36,70 +40,73 @@ public class PlayModeUI extends JPanel implements IRenderer {
     private final int hallWidth = cellCountX * cellWidth;           // 640
     private final int hallHeight = cellCountY * cellHeight;         // 640
 
-    // UI panel coordinates
     private final int uiX = hallX + hallWidth + 20;
     private final int uiTopY = 100;
 
     private BufferedImage hallBackground;
 
-    // Tileset loader and tiles
-    private TileLoader tileLoader;
-    private BufferedImage floorTile;
-    private BufferedImage wallTile;
+    // This is for purely dynamic rendering, which might be implemented later.
+//    private TileLoader tileLoader;
+//    private BufferedImage floorTile;
+//    private BufferedImage wallTile;
 
-    // Entities
     private BufferedImage playerImage;
     private BufferedImage runeImage;
 
-    // Define tile positions in the tileset
-    private static final int FLOOR_TILE_X = 6;  // Dark floor tile position
-    private static final int FLOOR_TILE_Y = 0;
-    
-    private static final int WALL_TOP_X = 4;    // Top wall tile position
-    private static final int WALL_TOP_Y = 0;
-    
-    private static final int WALL_SIDE_X = 3;   // Side wall tile position
-    private static final int WALL_SIDE_Y = 1;
-    
-    private static final int CORNER_TL_X = 3;   // Top-left corner position
-    private static final int CORNER_TL_Y = 0;
-    
-    private static final int CORNER_TR_X = 5;   // Top-right corner position
-    private static final int CORNER_TR_Y = 0;
+    // Monster images
+    private BufferedImage archerImage;
+    private BufferedImage fighterImage;
+    private BufferedImage wizardImage;
+
+    // Enchantment images
+    private BufferedImage extraTimeImage;
+    private BufferedImage revealImage;
+    private BufferedImage cloakImage;
+    private BufferedImage luringGemImage;
+    private BufferedImage extraLifeImage;
 
     public PlayModeUI(PlayMode playMode) {
         this.playMode = playMode;
         setBackground(new Color(43, 27, 44));
 
         try {
-            // Load the hall background image
             hallBackground = ImageIO.read(getClass().getResource("/assets/test_hall.png"));
             playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
             runeImage = ImageIO.read(getClass().getResource("/assets/cloakreveallure.png"));
+
+            // Load monster images
+            archerImage = ImageIO.read(getClass().getResource("/assets/archer.png"));
+            fighterImage = ImageIO.read(getClass().getResource("/assets/fighter.png"));
+            wizardImage = ImageIO.read(getClass().getResource("/assets/wizard.png"));
+
+//            // Load enchantment images
+//            extraTimeImage = ImageIO.read(getClass().getResource("/assets/extratime.png"));
+//            revealImage = ImageIO.read(getClass().getResource("/assets/reveal.png"));
+//            cloakImage = ImageIO.read(getClass().getResource("/assets/cloak.png"));
+//            luringGemImage = ImageIO.read(getClass().getResource("/assets/luringgem.png"));
+//            extraLifeImage = ImageIO.read(getClass().getResource("/assets/extralife.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        // Adjust panel size to accommodate hall and UI
         setPreferredSize(new Dimension(hallX + hallWidth + 200, hallY + hallHeight + 40));
     }
 
     private void drawHall(Graphics2D g, Hall hall) {
-        // Draw hall background, scaling it to match our cell grid
+
         if (hallBackground != null) {
-            // Draw the background image scaled to fit our hall dimensions
+
             g.drawImage(hallBackground, 
-                       hallX, hallY,             // Destination x,y
-                       hallX + hallWidth,        // Destination width
-                       hallY + hallHeight,       // Destination height
-                       0, 0,                     // Source x,y
-                       hallBackground.getWidth(), // Source width
-                       hallBackground.getHeight(),// Source height
+                       hallX, hallY,
+                       hallX + hallWidth,
+                       hallY + hallHeight,
+                       0, 0,
+                       hallBackground.getWidth(),
+                       hallBackground.getHeight(),
                        null);
         }
 
-        // Draw grid for debugging (comment out in production)
-        g.setColor(new Color(255, 255, 255, 30));  // Semi-transparent white
+        g.setColor(new Color(255, 255, 255, 30));
         for (int x = 0; x <= cellCountX; x++) {
             g.drawLine(hallX + x * cellWidth, hallY, 
                       hallX + x * cellWidth, hallY + hallHeight);
@@ -130,60 +137,100 @@ public class PlayModeUI extends JPanel implements IRenderer {
         Hall hall = playMode.getCurrentHall();
         Hero hero = playMode.getHero();
 
-        // Draw the hall background
         drawHall(g2d, hall);
 
-        // Draw game objects
         drawGameObjects(g2d, hall);
 
-        // Draw UI elements
         drawUI(g2d, hero);
     }
 
     private void drawGameObjects(Graphics2D g, Hall hall) {
-        // Draw hero
+        // Draw Hero
         Hero hero = playMode.getHero();
         Position heroPos = hero.getPosition();
         int heroX = hallX + heroPos.getX() * cellWidth;
         int heroY = hallY + heroPos.getY() * cellHeight;
         if (playerImage != null) {
-            // Center the hero in the cell
-            g.drawImage(playerImage, 
+            g.drawImage(playerImage,
                        heroX + (cellWidth - playerImage.getWidth(null))/2, 
                        heroY + (cellHeight - playerImage.getHeight(null))/2, 
                        cellWidth, cellHeight, null);
         }
 
-        // Draw rune if it exists
+        // Draw Rune
         Rune rune = hall.getRune();
         if (rune != null) {
             Position runePos = rune.getPosition();
             int runeX = hallX + runePos.getX() * cellWidth;
             int runeY = hallY + runePos.getY() * cellHeight;
             if (runeImage != null) {
-                // Center the rune in the cell
-                g.drawImage(runeImage, 
+                g.drawImage(runeImage,
                            runeX + (cellWidth - runeImage.getWidth(null))/2, 
                            runeY + (cellHeight - runeImage.getHeight(null))/2, 
                            cellWidth, cellHeight, null);
             }
         }
 
-        // Draw other game objects here...
+        // Draw Monsters using the monster list
+        for (Monster monster : hall.getMonsters()) {
+            Position monsterPos = monster.getPosition();
+            int monsterX = hallX + monsterPos.getX() * cellWidth;
+            int monsterY = hallY + monsterPos.getY() * cellHeight;
+            
+            BufferedImage monsterImage = null;
+            if (monster instanceof ArcherMonster && archerImage != null) {
+                monsterImage = archerImage;
+            } else if (monster instanceof FighterMonster && fighterImage != null) {
+                monsterImage = fighterImage;
+            } else if (monster instanceof WizardMonster && wizardImage != null) {
+                monsterImage = wizardImage;
+            }
+
+            if (monsterImage != null) {
+                g.drawImage(monsterImage,
+                          monsterX + (cellWidth - monsterImage.getWidth(null))/2,
+                          monsterY + (cellHeight - monsterImage.getHeight(null))/2,
+                          cellWidth, cellHeight, null);
+            }
+        }
+
+        // Draw Enchantments using the enchantment list
+        for (Enchantment enchantment : hall.getEnchantments()) {
+            Position enchantPos = enchantment.getPosition();
+            int enchantX = hallX + enchantPos.getX() * cellWidth;
+            int enchantY = hallY + enchantPos.getY() * cellHeight;
+            
+            BufferedImage enchantmentImage = null;
+            if (enchantment instanceof ExtraTime && extraTimeImage != null) {
+                enchantmentImage = extraTimeImage;
+            } else if (enchantment instanceof Reveal && revealImage != null) {
+                enchantmentImage = revealImage;
+            } else if (enchantment instanceof CloakOfProtection && cloakImage != null) {
+                enchantmentImage = cloakImage;
+            } else if (enchantment instanceof LuringGem && luringGemImage != null) {
+                enchantmentImage = luringGemImage;
+            } else if (enchantment instanceof ExtraLife && extraLifeImage != null) {
+                enchantmentImage = extraLifeImage;
+            }
+
+            if (enchantmentImage != null) {
+                g.drawImage(enchantmentImage,
+                          enchantX + (cellWidth - enchantmentImage.getWidth(null))/2,
+                          enchantY + (cellHeight - enchantmentImage.getHeight(null))/2,
+                          cellWidth, cellHeight, null);
+            }
+        }
     }
 
     private void drawUI(Graphics2D g, Hero hero) {
-        // Draw inventory panel background
         g.setColor(new Color(43, 27, 44));
         g.fillRect(uiX, uiTopY, 200, 400);
 
-        // Draw time
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Time: " + playMode.getRemainingTime() + " seconds", 
                     uiX + 10, uiTopY + 30);
 
-        // Draw hearts
         int heartSize = 20;
         int heartX = uiX + 10;
         int heartY = uiTopY + 50;

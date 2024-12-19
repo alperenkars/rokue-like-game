@@ -23,10 +23,8 @@ public abstract class Monster {
         this.position = position;
     }
 
-    public abstract void move();
-
     public void update(Hero hero, Hall hall) {
-        behaviour.act(hero, hall);
+        behaviour.act(hero, this);
     }
 
     public MonsterBehaviour getBehaviour() {
