@@ -2,7 +2,6 @@ package com.rokue.game.entities.enchantments;
 
 import com.rokue.game.entities.Hero;
 import com.rokue.game.util.Position;
-import javafx.geometry.Pos;
 
 public abstract class Enchantment {
     private boolean isCollected;
@@ -19,6 +18,10 @@ public abstract class Enchantment {
 
     public void collect() {
         this.isCollected = true;
+    }
+
+    public Position getPosition() {
+        return position;
     }
 
     public abstract void applyEffect(Hero hero);

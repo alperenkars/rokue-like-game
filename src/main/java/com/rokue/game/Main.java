@@ -34,7 +34,6 @@ public class Main {
 
             GameSystem gameSystem = new GameSystem(inputProvider, playModeUI);
             
-            // Setup main window
             JFrame frame = new JFrame("Rokue-like Game");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.addKeyListener(inputProvider);
