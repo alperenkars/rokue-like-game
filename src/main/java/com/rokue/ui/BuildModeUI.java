@@ -2,7 +2,9 @@ package com.rokue.ui;
 
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
+import com.rokue.game.render.IRenderer;
 import com.rokue.game.states.BuildMode;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
 
@@ -18,7 +20,7 @@ import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.util.List;
 
-public class BuildModeUI extends JPanel {
+public class BuildModeUI extends JPanel implements IRenderer {
     private BuildMode buildMode;
     private JProgressBar progressBar;
 
@@ -187,9 +189,12 @@ public class BuildModeUI extends JPanel {
 
     private void switchToPlayMode() {
         if (!buildMode.areAllHallsSatisfied()) {
-            System.out.println("Constraints not satisfied");
+            JOptionPane.showMessageDialog(this, 
+                "All halls must meet their minimum object requirements before starting the game.",
+                "Cannot Start Game",
+                JOptionPane.WARNING_MESSAGE);
         } else {
-            System.out.println("Switching to Play Mode");
+            buildMode.getEventManager().notify("SWITCH_TO_PLAY_MODE", buildMode.getHalls());
         }
     }
 
@@ -232,5 +237,13 @@ public class BuildModeUI extends JPanel {
             g.drawImage(icon.getImage(), x, y, width, height, this);
         }
 
+    }
+
+    @Override
+    public void render(GameState state) {
+        if (state instanceof BuildMode) {
+            this.buildMode = (BuildMode) state;
+        }
+        repaint();
     }
 }

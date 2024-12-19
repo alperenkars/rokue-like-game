@@ -1,5 +1,7 @@
 package com.rokue.ui;
 
+import com.rokue.game.render.IRenderer;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
 import com.rokue.ui.components.ImageBorder;
 
@@ -20,7 +22,7 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.net.URL;
 
-public class MainMenuUI extends JPanel {
+public class MainMenuUI extends JPanel implements IRenderer {
 
     private MainMenu mainMenu;
 
@@ -450,5 +452,13 @@ public class MainMenuUI extends JPanel {
         });
         timer.setRepeats(false);
         timer.start();
+    }
+
+    @Override
+    public void render(GameState state) {
+        if (state instanceof MainMenu) {
+            this.mainMenu = (MainMenu) state;
+        }
+        repaint();
     }
 }

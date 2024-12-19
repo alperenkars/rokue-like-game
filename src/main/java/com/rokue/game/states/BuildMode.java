@@ -6,6 +6,7 @@ import java.util.List;
 import com.rokue.game.GameSystem;
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
+import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Position;
 
 public class BuildMode implements GameState {
@@ -13,8 +14,10 @@ public class BuildMode implements GameState {
     private List<Hall> halls; // List of halls to design
     private Hall currentHall; // Currently active hall
     private DungeonObject selectedObject; // Object being placed
+    private EventManager eventManager;
 
-    public BuildMode() {
+    public BuildMode(EventManager eventManager) {
+        this.eventManager = eventManager;
         this.halls = new ArrayList<>();
 
         // Adding halls with their distinct names and minimum object requirements
@@ -70,6 +73,10 @@ public class BuildMode implements GameState {
 
     public List<Hall> getHalls() {
         return halls;
+    }
+
+    public EventManager getEventManager() {
+        return eventManager;
     }
 
     public boolean addObjectToCurrentHall(DungeonObject object, Position position) {
