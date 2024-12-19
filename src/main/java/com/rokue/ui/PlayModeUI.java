@@ -78,7 +78,7 @@ public class PlayModeUI extends JPanel implements IRenderer {
 
         try {
             playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
-            runeImage = ImageIO.read(getClass().getResource("/assets/cloakreveallure.png"));
+            runeImage = ImageIO.read(getClass().getResource("/assets/rune.png"));
 
             // Load monster images
             archerImage = ImageIO.read(getClass().getResource("/assets/archer.png"));
