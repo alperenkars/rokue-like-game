@@ -13,8 +13,11 @@ public class MonsterFactory {
     private static Random rand = new Random();
 
     public static Monster createRandomMonster(Hall hall) {
-        int monsterType = rand.nextInt(3);
-        // This may cause an infinite loop if the hall is full, refactor later
+        boolean wizardExists = hall.getMonsters().stream()
+                .anyMatch(monster -> monster instanceof WizardMonster);
+
+        int monsterType = wizardExists ? rand.nextInt(2) : rand.nextInt(3);
+
         while (true) {
             Position spawnPos = new Position(rand.nextInt(hall.getWidth()), rand.nextInt(hall.getHeight()));
             if (hall.getCell(spawnPos).getContent() == null) {
@@ -24,7 +27,10 @@ public class MonsterFactory {
                     case 1:
                         return new FighterMonster(spawnPos);
                     case 2:
-                        return new WizardMonster(spawnPos);
+                        if (!wizardExists) {
+                            return new WizardMonster(spawnPos);
+                        }
+                        return new FighterMonster(spawnPos);
                 }
             }
         }
