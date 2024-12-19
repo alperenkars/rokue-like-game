@@ -11,13 +11,12 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
+import com.rokue.game.entities.Rune;
 import com.rokue.game.entities.monsters.ArcherMonster;
 import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
@@ -121,6 +120,20 @@ public class PlayModeUI extends JPanel implements IRenderer {
             if (icon != null) {
                 g.drawImage(icon.getImage(), x, y, width, height, this);
             }
+        }
+
+        // Draw rune
+        Rune rune = hall.getRune();
+        if (rune != null && runeImage != null) {
+            Position runePos = rune.getPosition();
+            int runeX = hallX + runePos.getX() * cellWidth;
+            int runeY = hallY + runePos.getY() * cellHeight;
+            g.drawImage(runeImage,
+                       runeX,
+                       runeY,
+                       cellWidth,  // Use full cell width
+                       cellHeight, // Use full cell height
+                       null);
         }
 
         // Draw hero with consistent size
