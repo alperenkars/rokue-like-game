@@ -21,11 +21,13 @@ import javax.swing.JPanel;
 public class GameSystem {
     private GameState currentState;
     private IRenderer renderer;
+    private boolean isRunning;
     private IInputProvider inputProvider;
     private EventManager eventManager;
     private JFrame gameWindow;
 
     public GameSystem(JFrame gameWindow, EventManager eventManager) {
+        this.isRunning = true;
         this.gameWindow = gameWindow;
         this.eventManager = eventManager;
         setupEventHandlers();
@@ -80,19 +82,34 @@ public class GameSystem {
     }
 
     public void update() {
-        if (currentState != null) {
+        if (isRunning &&  currentState != null) {
             currentState.update(this);
         }
     }
 
+    public void setState(GameState newState) {
+        if (currentState != null) {
+            currentState.exit(this);
+        }
+        currentState = newState;
+        if (currentState != null) {
+            currentState.enter(this);
+        }
+    }
+
     public void render() {
-        if (renderer != null) {
+        if (currentState != null && renderer != null) {
             renderer.render(currentState);
         }
     }
 
     public void setInputProvider(IInputProvider inputProvider) {
         this.inputProvider = inputProvider;
+    }
+
+    public void stop() {
+        isRunning = false;
+        System.out.println("Game Stopped");
     }
 
     public GameState getCurrentState() {

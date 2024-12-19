@@ -36,6 +36,8 @@ public class PlayMode implements GameState {
     private int enchantmentSpawnCounter = 0;
     private Map<Enchantment, Integer> enchantmentTimers = new HashMap<>();
     private Random rand = new Random();
+    private boolean paused = false;
+
 
     public PlayMode(List<Hall> halls, Hero hero, EventManager eventManager) {
         this.halls = halls;
@@ -89,6 +91,8 @@ public class PlayMode implements GameState {
     }
 
     public void update(GameSystem system) {
+
+        if (!paused) {
         currentHall.update(hero);
         
         monsterSpawnCounter++;
@@ -120,6 +124,28 @@ public class PlayMode implements GameState {
             }
         }
     }
+    }
+
+
+public void pause() {
+    this.paused = true;
+    gameTimer.pause();
+
+    // if there is any pause-specific logic to be added, add them later
+}
+
+
+public void resume() {
+    this.paused = false;
+    gameTimer.resume();
+    // if there is any more resume specific logic add later
+}
+
+
+public boolean isPaused() {
+    return paused;
+}
+
 
     public void exit(GameSystem system) {
         System.out.println("Exiting Play Mode");

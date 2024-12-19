@@ -10,6 +10,9 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.swing.ImageIcon;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseEvent;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -27,7 +30,7 @@ import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
 
-public class PlayModeUI extends JPanel implements IRenderer {
+public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private PlayMode playMode;
     private JFrame gameWindow;
 
@@ -39,6 +42,12 @@ public class PlayModeUI extends JPanel implements IRenderer {
     private final int hallWidth = 640;
     private final int hallHeight = 640;
     private final Color BACKGROUND_COLOR = new Color(43, 27, 44); // Match BuildModeUI background
+
+    private boolean isPaused = false;
+    private BufferedImage pauseImage;
+    private BufferedImage resumeImage;
+    private final int BUTTON_SIZE = 40;
+    private final int BUTTON_MARGIN = 20;
 
     // UI Panel constants
     private final int uiPanelWidth = 200;
@@ -61,6 +70,7 @@ public class PlayModeUI extends JPanel implements IRenderer {
 
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
         this.playMode = playMode;
+        this.addMouseListener(this);
         this.gameWindow = gameWindow;
         setBackground(BACKGROUND_COLOR);
         setPreferredSize(new Dimension(hallX + hallWidth + uiPanelWidth + 40, 
@@ -80,6 +90,9 @@ public class PlayModeUI extends JPanel implements IRenderer {
         try {
             playerImage = ImageIO.read(new File("src/main/resources/assets/player.png"));
             runeImage = ImageIO.read(new File("src/main/resources/assets/rune.png"));
+
+            pauseImage = ImageIO.read(new File("src/main/resources/assets/pausebutton.png"));
+            resumeImage = ImageIO.read(new File("src/main/resources/assets/resumebutton.png"));
 
             // Load monster images
             archerImage = ImageIO.read(new File("src/main/resources/assets/archer.png"));
@@ -182,6 +195,41 @@ public class PlayModeUI extends JPanel implements IRenderer {
     }
 
     @Override
+    public void mouseClicked(MouseEvent e) {
+        checkPauseButtonClick(e.getX(), e.getY());
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {}
+
+    @Override
+    public void mouseReleased(MouseEvent e) {}
+
+    @Override
+    public void mouseEntered(MouseEvent e) {}
+
+    @Override
+    public void mouseExited(MouseEvent e) {}
+
+    public void checkPauseButtonClick(int mouseX, int mouseY) {
+        int buttonX = getWidth() - BUTTON_SIZE - BUTTON_MARGIN;
+        int buttonY = BUTTON_MARGIN;
+
+        if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE &&
+                mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
+            isPaused = !isPaused;
+            if (isPaused) {
+                // Pause game logic
+                playMode.pause();
+            } else {
+                // Resume game logic
+                playMode.resume();
+            }
+            repaint();
+        }
+    }
+
+    @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         
@@ -193,6 +241,11 @@ public class PlayModeUI extends JPanel implements IRenderer {
         Hall hall = playMode.getCurrentHall();
         drawHall(g2d, hall);
         drawUI(g2d, playMode.getHero());
+
+        BufferedImage currentImage = isPaused ? resumeImage : pauseImage;
+        int x = getWidth() - BUTTON_SIZE - BUTTON_MARGIN;
+        int y = BUTTON_MARGIN;
+        g2d.drawImage(currentImage, x, y, BUTTON_SIZE, BUTTON_SIZE, null);
     }
 
     private void drawUI(Graphics2D g, Hero hero) {

@@ -11,6 +11,7 @@ import javax.swing.Timer;
 import com.rokue.game.states.BuildMode;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.events.EventManager;
@@ -50,11 +51,26 @@ public class Main {
 
             // Start game loop
             new Timer(16, e -> {
-                var actions = inputProvider.pollActions();
-                if (gameSystem.getCurrentState() instanceof PlayMode) {
-                    ((PlayMode)gameSystem.getCurrentState()).handleActions(actions);
+                GameState currentState = gameSystem.getCurrentState();
+                boolean isPaused = false;
+
+                if (currentState instanceof PlayMode) {
+                    PlayMode currentPlayMode = (PlayMode) currentState;
+                    isPaused = currentPlayMode.isPaused();
+
+                    // Clear inputs when transitioning to paused state
+                    if (isPaused) {
+                        inputProvider.clearActions();
+                    }
                 }
-                gameSystem.update();
+
+                if (!isPaused) {
+                    var actions = inputProvider.pollActions();
+                    if (currentState instanceof PlayMode) {
+                        ((PlayMode)currentState).handleActions(actions);
+                    }
+                    gameSystem.update();
+                }
                 gameSystem.render();
             }).start();
         });
