@@ -10,11 +10,14 @@ public class Hero {
     private Position position;
     private int lives;
     private EventManager eventManager;
+    private Hall currentHall; //reference to the current hall
 
     public Hero(Position startPosition, EventManager eventManager) {
         this.position = startPosition;
         this.lives = 3; // Default lives
         this.eventManager = eventManager;
+        this.currentHall = null;
+        
     }
 
     public Position getPosition() {
@@ -78,4 +81,11 @@ public class Hero {
     public EventManager getEventManager() {
         return eventManager;
     }
+    public void setCurrentHall(Hall currentHall) {
+        this.currentHall = currentHall;
+    }
+    public Hall getCurrentHall() {
+        return this.currentHall; 
+    }
+    
 }
