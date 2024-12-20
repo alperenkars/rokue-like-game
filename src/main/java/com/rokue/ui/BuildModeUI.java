@@ -2,7 +2,9 @@ package com.rokue.ui;
 
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
+import com.rokue.game.render.IRenderer;
 import com.rokue.game.states.BuildMode;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
 
@@ -18,8 +20,9 @@ import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.util.List;
 
-public class BuildModeUI extends JPanel {
+public class BuildModeUI extends JPanel implements IRenderer {
     private BuildMode buildMode;
+    private JProgressBar progressBar;
 
     // Grid constants
     private final int hallX = 20;
@@ -32,6 +35,7 @@ public class BuildModeUI extends JPanel {
     // Banner panel constants
     private final int bannerWidth = 200;
     private final int bannerHeight = 400;
+    private final int maxObjects = 50;
 
     public BuildModeUI(BuildMode buildMode) {
         this.buildMode = buildMode;
@@ -44,12 +48,18 @@ public class BuildModeUI extends JPanel {
         bannerPanel.setBounds(hallX + hallWidth + 20, hallY, bannerWidth, bannerHeight);
         add(bannerPanel);
 
-        // Add Buttons to Switch Halls
-        JButton leftButton = createImageButton("src/main/resources/assets/left_arrow.png", e -> buildMode.switchToPreviousHall());
+        // Add Navigation Buttons
+        JButton leftButton = createImageButton("src/main/resources/assets/left_arrow.png", e -> {
+            buildMode.switchToPreviousHall();
+            updateProgressBar();
+        });
         leftButton.setBounds(hallX, hallY + hallHeight + 10, 50, 50);
         add(leftButton);
 
-        JButton rightButton = createImageButton("src/main/resources/assets/right_arrow.png", e -> buildMode.switchToNextHall());
+        JButton rightButton = createImageButton("src/main/resources/assets/right_arrow.png", e -> {
+            buildMode.switchToNextHall();
+            updateProgressBar();
+        });
         rightButton.setBounds(hallX + hallWidth - 50, hallY + hallHeight + 10, 50, 50);
         add(rightButton);
 
@@ -57,6 +67,14 @@ public class BuildModeUI extends JPanel {
         JButton playButton = createImageButton("src/main/resources/assets/playbutton.png", e -> switchToPlayMode());
         playButton.setBounds(hallX + hallWidth / 2 - 25, hallY + hallHeight + 10, 50, 50);
         add(playButton);
+
+        // Add Progress Bar
+        progressBar = new JProgressBar(0, maxObjects);
+        progressBar.setBounds(hallX, hallY - 20, hallWidth, 20);
+        progressBar.setStringPainted(true);
+        progressBar.setForeground(Color.GREEN);
+        progressBar.setBackground(new Color(30, 30, 30));
+        add(progressBar);
 
         //Drag and Drop
         setDropTarget(new DropTarget() {
@@ -77,6 +95,7 @@ public class BuildModeUI extends JPanel {
                     object.setPosition(gridPosition);
 
                     if (buildMode.addObjectToCurrentHall(object, gridPosition)) {
+                        updateProgressBar();
                         repaint();
                     }
                 } catch (Exception e) {
@@ -86,6 +105,18 @@ public class BuildModeUI extends JPanel {
         });
 
         setPreferredSize(new Dimension(hallX + hallWidth + bannerWidth + 40, hallY + hallHeight + 80));
+        updateProgressBar();
+    }
+
+    private void updateProgressBar() {
+        Hall currentHall = buildMode.getCurrentHall();
+        int currentObjectCount = currentHall.getObjects().size();
+        int minObjectRequirement = currentHall.getMinObjectRequirement();
+
+        progressBar.setMaximum(minObjectRequirement);
+        progressBar.setValue(Math.min(currentObjectCount, minObjectRequirement));
+        progressBar.setString(currentObjectCount + " / " + minObjectRequirement + " Objects");
+
     }
 
     private JPanel createBannerPanel() {
@@ -157,8 +188,14 @@ public class BuildModeUI extends JPanel {
     }
 
     private void switchToPlayMode() {
-        // Transition to Play Mode
-        System.out.println("Switching to Play Mode");
+        if (!buildMode.areAllHallsSatisfied()) {
+            JOptionPane.showMessageDialog(this, 
+                "All halls must meet their minimum object requirements before starting the game.",
+                "Cannot Start Game",
+                JOptionPane.WARNING_MESSAGE);
+        } else {
+            buildMode.getEventManager().notify("SWITCH_TO_PLAY_MODE", buildMode.getHalls());
+        }
     }
 
     private Position getGridPosition(Point point) {
@@ -200,5 +237,13 @@ public class BuildModeUI extends JPanel {
             g.drawImage(icon.getImage(), x, y, width, height, this);
         }
 
+    }
+
+    @Override
+    public void render(GameState state) {
+        if (state instanceof BuildMode) {
+            this.buildMode = (BuildMode) state;
+        }
+        repaint();
     }
 }

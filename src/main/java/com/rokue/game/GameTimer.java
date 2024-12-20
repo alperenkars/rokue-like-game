@@ -8,7 +8,7 @@ public class GameTimer {
 
     private static final int TICK_INTERVAL = 1000; // Timer ticks every second
     private int remainingTime;
-    private boolean isPaused;
+    private boolean isPaused=false;
     private Timer timer;
     private EventManager eventManager;
 
@@ -54,13 +54,17 @@ public class GameTimer {
     }
 
     private void tick() {
-        if (remainingTime > 0) {
+        if (!isPaused &&remainingTime > 0) {
             remainingTime--;
             eventManager.notify("TIMER_TICK", remainingTime);
-        } else {
+        } else if (!isPaused && remainingTime <= 0) {
             stop();
             eventManager.notify("TIME_EXPIRED", null);
         }
+    }
+
+    public boolean isPaused() {
+        return isPaused;
     }
 
     public void stop() {

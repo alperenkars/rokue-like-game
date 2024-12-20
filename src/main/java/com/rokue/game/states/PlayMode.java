@@ -1,9 +1,10 @@
 package com.rokue.game.states;
 
-import java.util.List;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import com.rokue.game.GameSystem;
 import com.rokue.game.GameTimer;
@@ -12,12 +13,12 @@ import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
-import com.rokue.game.events.EventManager;
-import com.rokue.game.util.Position;
-import com.rokue.game.entities.monsters.Monster;
 import com.rokue.game.entities.enchantments.Enchantment;
-import com.rokue.game.factories.MonsterFactory;
+import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.events.EventManager;
 import com.rokue.game.factories.EnchantmentFactory;
+import com.rokue.game.factories.MonsterFactory;
+import com.rokue.game.util.Position;
 
 public class PlayMode implements GameState {
 
@@ -34,6 +35,9 @@ public class PlayMode implements GameState {
     private int monsterSpawnCounter = 0;
     private int enchantmentSpawnCounter = 0;
     private Map<Enchantment, Integer> enchantmentTimers = new HashMap<>();
+    private Random rand = new Random();
+    private boolean paused = false;
+
 
     public PlayMode(List<Hall> halls, Hero hero, EventManager eventManager) {
         this.halls = halls;
@@ -47,11 +51,13 @@ public class PlayMode implements GameState {
         this.gameTimer = new GameTimer(eventManager);
         this.gameTimer.start(PlayMode.START_TIME);
 
-        // Register event handlers for monster interactions
-        registerMonsterEventHandlers();
+        Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
+        currentHall.setRune(rune);
+
+        registerEventHandlers();
     }
 
-    private void registerMonsterEventHandlers() {
+    private void registerEventHandlers() {
         // Arrow hit event
         eventManager.subscribe("HERO_HIT_BY_ARROW", (eventType, data) -> {
             hero.decreaseLife();
@@ -76,9 +82,17 @@ public class PlayMode implements GameState {
                 System.out.println("PlayMode: Rune teleported by wizard!");
             }
         });
+
+        eventManager.subscribe("HERO_DEAD", (eventType, data) -> {
+            gameTimer.stop();
+            System.out.println("PlayMode: Hero is dead. Game Over!");
+            eventManager.notify("GAME_OVER", null);
+        });
     }
 
     public void update(GameSystem system) {
+
+        if (!paused) {
         currentHall.update(hero);
         
         monsterSpawnCounter++;
@@ -110,6 +124,28 @@ public class PlayMode implements GameState {
             }
         }
     }
+    }
+
+
+public void pause() {
+    this.paused = true;
+    gameTimer.pause();
+
+    // if there is any pause-specific logic to be added, add them later
+}
+
+
+public void resume() {
+    this.paused = false;
+    gameTimer.resume();
+    // if there is any more resume specific logic add later
+}
+
+
+public boolean isPaused() {
+    return paused;
+}
+
 
     public void exit(GameSystem system) {
         System.out.println("Exiting Play Mode");
@@ -137,6 +173,8 @@ public class PlayMode implements GameState {
             System.out.println("Moving to the next hall: " + currentHall.getName());
             gameTimer.start(PlayMode.START_TIME);
             hero.setPosition(PlayMode.START_POSITION);
+            Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
+            currentHall.setRune(rune);
         } else {
             eventManager.notify("GAME_COMPLETED", null);
             System.out.println("All halls completed. You win!");

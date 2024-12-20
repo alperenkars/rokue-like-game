@@ -6,6 +6,7 @@ import java.util.List;
 import com.rokue.game.GameSystem;
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
+import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Position;
 
 public class BuildMode implements GameState {
@@ -13,11 +14,22 @@ public class BuildMode implements GameState {
     private List<Hall> halls; // List of halls to design
     private Hall currentHall; // Currently active hall
     private DungeonObject selectedObject; // Object being placed
+    private EventManager eventManager;
 
-    public BuildMode(List<Hall> halls) {
-        this.halls = halls;
-        this.currentHall = halls.get(0); // Start with the first hall
+    public BuildMode(EventManager eventManager) {
+        this.eventManager = eventManager;
+        this.halls = new ArrayList<>();
+
+        // Adding halls with their distinct names and minimum object requirements
+        halls.add(new Hall("Earth Hall", 20, 20, 1));   // Earth Hall: min 6 objects
+        halls.add(new Hall("Air Hall", 20, 20, 1));    // Air Hall: min 9 objects
+        halls.add(new Hall("Water Hall", 20, 20, 1)); // Water Hall: min 13 objects
+        halls.add(new Hall("Fire Hall", 20, 20, 1));  // Fire Hall: min 17 objects
+
+        currentHall = halls.get(0);
+
     }
+
 
     @Override
     public void enter(GameSystem system) {
@@ -63,6 +75,10 @@ public class BuildMode implements GameState {
         return halls;
     }
 
+    public EventManager getEventManager() {
+        return eventManager;
+    }
+
     public boolean addObjectToCurrentHall(DungeonObject object, Position position) {
         Hall hall = getCurrentHall();
 
@@ -74,6 +90,15 @@ public class BuildMode implements GameState {
         // Add object to the hall
         object.setPosition(position);
         hall.addObject(object, position);
+        return true;
+    }
+
+    public boolean areAllHallsSatisfied() {
+        for (Hall hall : halls) {
+            if (!hall.isRequirementMet()) {
+                return false;
+            }
+        }
         return true;
     }
 

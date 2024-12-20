@@ -1,5 +1,7 @@
 package com.rokue.ui;
 
+import com.rokue.game.render.IRenderer;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
 import com.rokue.ui.components.ImageBorder;
 
@@ -20,7 +22,7 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.net.URL;
 
-public class MainMenuUI extends JPanel {
+public class MainMenuUI extends JPanel implements IRenderer {
 
     private MainMenu mainMenu;
 
@@ -34,7 +36,7 @@ public class MainMenuUI extends JPanel {
 
         // Load and resize the image using resource paths
         try {
-            ImageIcon originalIcon = new ImageIcon(ImageIO.read(getClass().getResource("/assets/logo.png")));
+            ImageIcon originalIcon = new ImageIcon(new File("src/main/resources/assets/logo.png").getAbsolutePath());
             Image originalImage = originalIcon.getImage();
             Image resizedImage = originalImage.getScaledInstance(200, 150, Image.SCALE_SMOOTH);
             ImageIcon resizedIcon = new ImageIcon(resizedImage);
@@ -47,9 +49,9 @@ public class MainMenuUI extends JPanel {
             menuPanel.add(Box.createVerticalStrut(50));
 
             // Load button images
-            ImageIcon playIcon = new ImageIcon(ImageIO.read(getClass().getResource("/assets/playbutton.png")));
-            ImageIcon helpIcon = new ImageIcon(ImageIO.read(getClass().getResource("/assets/helpbutton.png")));
-            ImageIcon exitIcon = new ImageIcon(ImageIO.read(getClass().getResource("/assets/quitbutton.png")));
+            ImageIcon playIcon = new ImageIcon(new File("src/main/resources/assets/playbutton.png").getAbsolutePath());
+            ImageIcon helpIcon = new ImageIcon(new File("src/main/resources/assets/helpbutton.png").getAbsolutePath());
+            ImageIcon exitIcon = new ImageIcon(new File("src/main/resources/assets/quitbutton.png").getAbsolutePath());
 
             // Create and setup buttons
             JButton playButton = createStyledButton(playIcon);
@@ -86,7 +88,7 @@ public class MainMenuUI extends JPanel {
             menuPanel.add(Box.createVerticalStrut(20));
             menuPanel.add(exitButton);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -106,8 +108,8 @@ public class MainMenuUI extends JPanel {
 
         public AnimatedBackgroundPanel() {
             try {
-                backgroundImage = ImageIO.read(getClass().getResource("/assets/background.jpg"));
-                animatedImage = ImageIO.read(getClass().getResource("/assets/animatedmomo.png"));
+                backgroundImage = ImageIO.read(new File("src/main/resources/assets/background.jpg"));
+                animatedImage = ImageIO.read(new File("src/main/resources/assets/animatedmomo.png"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -212,7 +214,7 @@ public class MainMenuUI extends JPanel {
         // Add a wooden texture border to the text background panel
         BufferedImage woodenTexture = null;
         try {
-            woodenTexture = ImageIO.read(MainMenu.class.getResource("/assets/wooden_texture.jpeg"));
+            woodenTexture = ImageIO.read(new File("src/main/resources/assets/wooden_texture.jpeg"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -337,7 +339,7 @@ public class MainMenuUI extends JPanel {
                         + "  <h2>Enchantments</h2>"
                         + "  <div class='enchantment'>"
                         + "    <strong>Reveal Enchantment:</strong> Temporarily reveals hidden areas and traps."
-                        + "    <img src='" + getClass().getResource("/assets/reveal.png") + "' alt='Reveal Enchantment'/>"
+                        + "    <img src='file:" + new File("src/main/resources/assets/reveal.png").getAbsolutePath() + "' alt='Reveal Enchantment'/>"
                         + "  </div>"
                         + "  <div class='enchantment'>"
                         + "    <strong>Cloak of Protection:</strong> Grants temporary invisibility."
@@ -389,7 +391,7 @@ public class MainMenuUI extends JPanel {
         );
 
         // Create the image button for going back
-        ImageIcon backIcon = new ImageIcon(MainMenu.class.getResource("/assets/backbutton.png"));
+        ImageIcon backIcon = new ImageIcon(new File("src/main/resources/assets/backbutton.png").getAbsolutePath());
         JButton backButton = new JButton(backIcon);
         backButton.setContentAreaFilled(false);
         backButton.setBorderPainted(false);
@@ -450,5 +452,13 @@ public class MainMenuUI extends JPanel {
         });
         timer.setRepeats(false);
         timer.start();
+    }
+
+    @Override
+    public void render(GameState state) {
+        if (state instanceof MainMenu) {
+            this.mainMenu = (MainMenu) state;
+        }
+        repaint();
     }
 }
