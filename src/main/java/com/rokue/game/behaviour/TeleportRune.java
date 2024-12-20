@@ -16,7 +16,7 @@ public class TeleportRune implements MonsterBehaviour {
     public void act(Hero hero, Hall hall) {
         Rune rune = hall.getRune();
         if (rune != null && !rune.isCollected()) {
-            rune.moveRandomly(hall);
+            rune.moveRandom(hall);
             System.out.println("TeleportRune: Rune has been teleported by the WizardMonster!");
         }
     }
