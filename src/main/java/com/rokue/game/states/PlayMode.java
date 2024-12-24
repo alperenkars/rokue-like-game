@@ -8,6 +8,7 @@ import java.util.Random;
 
 import com.rokue.game.GameSystem;
 import com.rokue.game.GameTimer;
+import com.rokue.game.actions.ClickDungeonAction;
 import com.rokue.game.actions.IAction;
 import com.rokue.game.actions.MoveAction;
 import com.rokue.game.entities.Hall;
@@ -161,6 +162,13 @@ public boolean isPaused() {
             if (action instanceof MoveAction) {
                 MoveAction moveAction = (MoveAction) action;
                 this.hero.move(moveAction.getDirection(), this.currentHall);
+            }
+            else if (action instanceof ClickDungeonAction) {
+                ClickDungeonAction clickAction = (ClickDungeonAction) action;
+                // Check if the click is within the hall boundaries
+                // Check if the clicked cell has a dungeon object
+                // Check if the dungeon object hides the rune
+                // If yes remove the object and set the rune to be visible
             }
         }
     }

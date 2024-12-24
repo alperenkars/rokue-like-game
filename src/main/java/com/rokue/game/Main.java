@@ -58,7 +58,6 @@ public class Main {
                     PlayMode currentPlayMode = (PlayMode) currentState;
                     isPaused = currentPlayMode.isPaused();
 
-                    // Clear inputs when transitioning to paused state
                     if (isPaused) {
                         inputProvider.clearActions();
                     }
