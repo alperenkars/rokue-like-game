@@ -195,7 +195,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
 
         // Create a panel for the help with animated background
         JPanel helpPanel = new JPanel() {
-            private Image backgroundImage = new ImageIcon(getClass().getResource("/assets/background.jpg")).getImage();
+            private Image backgroundImage = new ImageIcon("/assets/background.jpg").getImage();
 
             @Override
             protected void paintComponent(Graphics g) {

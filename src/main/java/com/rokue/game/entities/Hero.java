@@ -1,7 +1,6 @@
 package com.rokue.game.entities;
 
 import com.rokue.game.actions.MoveAction;
-import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
@@ -43,7 +42,12 @@ public class Hero {
         }
 
         if (currentHall != null && currentHall.getCell(newPosition) != null) {
-            this.position = newPosition;
+            Object content = currentHall.getCell(newPosition).getContent();
+            if (content == null || content instanceof Rune) {
+                this.position = newPosition;
+            } else {
+                System.out.println("Cannot move through objects.");
+            }
         } else {
             System.out.println("Cannot move outside the hall boundaries.");
         }

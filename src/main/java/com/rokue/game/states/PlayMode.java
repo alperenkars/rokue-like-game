@@ -79,6 +79,7 @@ public class PlayMode implements GameState {
             Rune rune = currentHall.getRune();
             if (rune != null) {
                 rune.moveRandomly(currentHall);
+                currentHall.setRune(rune);
                 System.out.println("PlayMode: Rune teleported by wizard!");
             }
         });
