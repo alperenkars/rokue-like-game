@@ -104,7 +104,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
         private double rotationAngle = 0;
         private double rotationSpeed = 0.1;
         private ArrayList<Point> trail;
-        private final int TRAIL_LENGTH = 10;
+        private final int TRAIL_LENGTH = 20;
 
         public AnimatedBackgroundPanel() {
             try {
