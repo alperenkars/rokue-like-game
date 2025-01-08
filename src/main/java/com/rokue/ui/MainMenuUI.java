@@ -23,18 +23,18 @@ import java.util.ArrayList;
 import java.net.URL;
 
 public class MainMenuUI extends JPanel implements IRenderer {
-
-    private MainMenu mainMenu;
+    private AnimatedBackgroundPanel menuPanel; // Store as a field
+    public MainMenu mainMenu;
 
     public MainMenuUI(MainMenu mainMenu) {
         this.mainMenu = mainMenu;
         setLayout(new BorderLayout());
 
-        // Create a panel for the menu with animated background
-        AnimatedBackgroundPanel menuPanel = new AnimatedBackgroundPanel();
+        // first steps to create the main menu panel
+        menuPanel = new AnimatedBackgroundPanel();
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
-
-        // Load and resize the image using resource paths
+        
+        // load the image
         try {
             ImageIcon originalIcon = new ImageIcon(new File("src/main/resources/assets/logo.png").getAbsolutePath());
             Image originalImage = originalIcon.getImage();
@@ -43,17 +43,17 @@ public class MainMenuUI extends JPanel implements IRenderer {
             JLabel imageLabel = new JLabel(resizedIcon);
             imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            // Add padding
+            // padding ajustment
             menuPanel.add(Box.createVerticalStrut(20));
             menuPanel.add(imageLabel);
             menuPanel.add(Box.createVerticalStrut(50));
 
-            // Load button images
+            // images for buttons
             ImageIcon playIcon = new ImageIcon(new File("src/main/resources/assets/playbutton.png").getAbsolutePath());
             ImageIcon helpIcon = new ImageIcon(new File("src/main/resources/assets/helpbutton.png").getAbsolutePath());
             ImageIcon exitIcon = new ImageIcon(new File("src/main/resources/assets/quitbutton.png").getAbsolutePath());
 
-            // Create and setup buttons
+            // create and setup buttons
             JButton playButton = createStyledButton(playIcon);
             JButton helpButton = createStyledButton(helpIcon);
             JButton exitButton = createStyledButton(exitIcon);
@@ -95,7 +95,12 @@ public class MainMenuUI extends JPanel implements IRenderer {
         add(menuPanel, BorderLayout.CENTER);
     }
 
-    private class AnimatedBackgroundPanel extends JPanel {
+    // getter for the animated panel
+    public AnimatedBackgroundPanel getAnimatedPanel() {
+        return menuPanel;
+    }
+
+    public class AnimatedBackgroundPanel extends JPanel {
         private Image backgroundImage;
         private Image animatedImage;
         private int x = 100, y = 100;
@@ -121,8 +126,46 @@ public class MainMenuUI extends JPanel implements IRenderer {
             });
             timer.start();
         }
+        public int getTrailSize() {
+            return trail.size();
+        }
+        
+        public int getMaxTrailLength() {
+            return TRAIL_LENGTH;
+        }
 
-        private void updatePosition() {
+        public Point getCurrentPosition() {
+            return new Point(x, y);
+        }
+
+        public void setCurrentX(int newX) {
+            this.x = newX;
+        }
+
+        /**
+         * updates the position and rotation of the animated image and handles its trail.
+         * it should bounce from boundaries and trail tail must follow momo
+         * @requires
+         * - animatedImage != null
+         * - trail != null
+         * - TRAIL_LENGTH > 0
+         * - speed != 0
+         * - getWidth() and getHeight() return valid numbers
+         * 
+         * @modifies
+         * - x, y coordinates
+         * - rotationAngle
+         * - trail list
+         * - xDirection, yDirection
+         * 
+         * @effects
+         * - updates x,y position based on direction and speed
+         * - updates rotation angle
+         * - adds new position to trail
+         * - maintains trail length
+         * - reverses direction when hitting boundaries
+         */
+        public void updatePosition() {
             x += xDirection * speed;
             y += yDirection * speed;
             rotationAngle += rotationSpeed;
@@ -151,7 +194,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
                 g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
             }
 
-            // Draw trail dots
+            // trail dots
             for (int i = 0; i < trail.size(); i++) {
                 Point p = trail.get(i);
                 float alpha = (float) i / trail.size();
@@ -161,7 +204,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
                         10, 10);
             }
 
-            // Draw main image
+            // main image
             if (animatedImage != null) {
                 AffineTransform oldTransform = g2d.getTransform();
                 int centerX = x + animatedImage.getWidth(this) / 2;
@@ -183,17 +226,17 @@ public class MainMenuUI extends JPanel implements IRenderer {
     }
 
     private void openHelpScreen() {
-        // Get the parent window of this component
+        // parent window of this component
         Window parentWindow = SwingUtilities.getWindowAncestor(this);
 
-        // Create a new frame for the help screen with animated background
+        // new frame for the help screen with animated background
         JFrame helpFrame = new JFrame("Help");
         // Set the help frame size to 872x662 to match the desired parent size
         helpFrame.setSize(872, 662);
         helpFrame.setLocationRelativeTo(parentWindow);  // Center relative to parent
         helpFrame.setLayout(new BorderLayout());
 
-        // Create a panel for the help with animated background
+        // panel for the help with animated background
         JPanel helpPanel = new JPanel() {
             private Image backgroundImage = new ImageIcon("/assets/background.jpg").getImage();
 
@@ -206,12 +249,12 @@ public class MainMenuUI extends JPanel implements IRenderer {
         helpPanel.setBackground(new Color(245, 245, 220));
         helpPanel.setLayout(new GridBagLayout());
 
-        // Create a panel for the text content
+        
         JPanel textBackgroundPanel = new JPanel();
         textBackgroundPanel.setBackground(new Color(245, 245, 220));
         textBackgroundPanel.setLayout(new BorderLayout());
 
-        // Add a wooden texture border to the text background panel
+        //wooden texture border 
         BufferedImage woodenTexture = null;
         try {
             woodenTexture = ImageIO.read(new File("src/main/resources/assets/wooden_texture.jpeg"));
@@ -225,15 +268,14 @@ public class MainMenuUI extends JPanel implements IRenderer {
             textBackgroundPanel.setBorder(compoundBorder);
         }
 
-        // Create the help label
+       
         JLabel helpLabel = new JLabel();
         helpLabel.setFont(new Font("SansSerif", Font.PLAIN, 16)); // Slightly smaller font to fit better
         helpLabel.setForeground(new Color(139, 69, 19));
         helpLabel.setHorizontalAlignment(SwingConstants.CENTER);
         helpLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Update the helpLabel text with the same HTML, possibly reduce font-sizes in CSS to fit better
-        helpLabel.setText(
+            helpLabel.setText(
                 "<html>"
                         + "<head>"
                         + "<style>"
@@ -351,7 +393,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
                         + "  </div>"
                         + "</div>"
 
-                        // Monsters Section
+                        // monsters Section
                         + "<div class='section'>"
                         + "  <h2>Monsters</h2>"
                         + "  <div class='monster'>"
@@ -390,7 +432,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
                         + "</body></html>"
         );
 
-        // Create the image button for going back
+      
         ImageIcon backIcon = new ImageIcon(new File("src/main/resources/assets/backbutton.png").getAbsolutePath());
         JButton backButton = new JButton(backIcon);
         backButton.setContentAreaFilled(false);
@@ -412,7 +454,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
         textPanel.add(backButton);
         textPanel.add(Box.createVerticalStrut(10));
 
-        // Add the text panel to a scroll pane
+       
         JScrollPane scrollPane = new JScrollPane(textPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setOpaque(false);
@@ -420,7 +462,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
 
         textBackgroundPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Center the text background panel in the help panel
+        
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -432,14 +474,14 @@ public class MainMenuUI extends JPanel implements IRenderer {
 
         helpFrame.add(helpPanel, BorderLayout.CENTER);
 
-        // Make the help frame visible
+        
         helpFrame.setVisible(true);
 
-        // Hide the main menu frame
+        // hide the main menu frame
         parentWindow.setVisible(false);
     }
 
-    // Method to animate button click
+    // method to animate button click
     private static void animateButtonClick(JButton button, ImageIcon originalIcon) {
         ImageIcon clickedIcon = new ImageIcon(new ImageIcon(originalIcon.getImage()).getImage().getScaledInstance(380, 280, Image.SCALE_SMOOTH));
         button.setIcon(clickedIcon);
