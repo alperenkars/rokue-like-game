@@ -245,7 +245,7 @@ public class PlayMode implements GameState {
                 }
             }
 
-            // Reset current hall to first hall
+            // Reset current hall to first hall and initialize it
             synchronized(this) {
                 currentHall = halls.get(0);
                 // Reset hero position and state
@@ -253,6 +253,12 @@ public class PlayMode implements GameState {
                     hero.setPosition(START_POSITION);
                 }
                 currentHall.setHero(hero);
+                
+                // Create and set initial rune for the first hall
+                Position runePos = new Position(rand.nextInt(currentHall.getWidth()), 
+                                             rand.nextInt(currentHall.getHeight()));
+                Rune rune = new Rune(runePos);
+                currentHall.setRune(rune);
             }
 
             // Reset pause state
@@ -290,8 +296,12 @@ public class PlayMode implements GameState {
                 
                 // Safely transition to next hall
                 synchronized(this) {
+                    // Clear current hall's rune and hero
+                    currentHall.setRune(null);
+                    currentHall.setHero(null);
+                    
+                    // Set up next hall
                     currentHall = halls.get(nextHallIndex);
-                    currentHall.setHero(hero);
                     System.out.println("Moving to the next hall: " + currentHall.getName());
                     
                     if (gameTimer != null) {
@@ -299,7 +309,10 @@ public class PlayMode implements GameState {
                     }
                     gameTimer.start(PlayMode.START_TIME);
                     
-                    hero.setPosition(PlayMode.START_POSITION);
+                    // Set up hero and rune in new hall
+                    hero.setPosition(START_POSITION);
+                    currentHall.setHero(hero);
+                    
                     Position runePos = new Position(rand.nextInt(currentHall.getWidth()), 
                                                   rand.nextInt(currentHall.getHeight()));
                     Rune rune = new Rune(runePos);
@@ -310,6 +323,10 @@ public class PlayMode implements GameState {
                     if (gameTimer != null) {
                         gameTimer.stop();
                     }
+                    // Clear final hall state
+                    currentHall.setRune(null);
+                    currentHall.setHero(null);
+                    
                     eventManager.notify("GAME_COMPLETED", null);
                     System.out.println("All halls completed. You win!");
                 }

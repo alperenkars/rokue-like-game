@@ -177,9 +177,15 @@ public class Hall {
     }
 
     public void setRune(Rune rune) {
+        if (this.rune != null) {
+            // Clear the old rune's cell
+            getCell(this.rune.getPosition()).setContent(null);
+        }
         this.rune = rune;
-        Position runePosition = rune.getPosition();
-        getCell(runePosition).setContent(rune);
+        if (rune != null) {
+            Position runePosition = rune.getPosition();
+            getCell(runePosition).setContent(rune);
+        }
     }
 
     public void addEnchantment(Enchantment enchantment) {
