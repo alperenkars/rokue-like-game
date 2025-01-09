@@ -1,14 +1,13 @@
 package com.rokue.game;
 
 import com.rokue.game.events.EventManager;
-import java.util.Timer;
-import java.util.TimerTask;
+import javax.swing.Timer;
 
 public class GameTimer {
 
     private static final int TICK_INTERVAL = 1000; // Timer ticks every second
     private int remainingTime;
-    private boolean isPaused=false;
+    private boolean isPaused = false;
     private Timer timer;
     private EventManager eventManager;
 
@@ -16,7 +15,11 @@ public class GameTimer {
         this.eventManager = eventManager;
         this.remainingTime = 0;
         this.isPaused = false;
-        this.timer = new Timer();
+        this.timer = new Timer(TICK_INTERVAL, e -> {
+            if (!isPaused) {
+                tick();
+            }
+        });
 
         eventManager.subscribe("ADD_TIME", (eventType, data) -> {
             int timeToAdd = (int) data;
@@ -27,14 +30,7 @@ public class GameTimer {
 
     public void start(int initialTime) {
         this.remainingTime = initialTime;
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (!isPaused) {
-                    tick();
-                }
-            }
-        }, 0, TICK_INTERVAL);
+        timer.start();
     }
 
     public void pause() {
@@ -54,7 +50,7 @@ public class GameTimer {
     }
 
     private void tick() {
-        if (!isPaused &&remainingTime > 0) {
+        if (!isPaused && remainingTime > 0) {
             remainingTime--;
             eventManager.notify("TIMER_TICK", remainingTime);
         } else if (!isPaused && remainingTime <= 0) {
@@ -68,6 +64,6 @@ public class GameTimer {
     }
 
     public void stop() {
-        timer.cancel();
+        timer.stop();
     }
 }

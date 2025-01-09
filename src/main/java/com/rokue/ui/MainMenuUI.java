@@ -176,10 +176,21 @@ public class MainMenuUI extends JPanel implements IRenderer {
                 trail.remove(0);
             }
 
-            if (x < 0 || x + animatedImage.getWidth(this) > getWidth()) {
+            // Check and correct x boundary
+            if (x < 0) {
+                x = 0;
+                xDirection *= -1;
+            } else if (x + animatedImage.getWidth(this) > getWidth()) {
+                x = getWidth() - animatedImage.getWidth(this);
                 xDirection *= -1;
             }
-            if (y < 0 || y + animatedImage.getHeight(this) > getHeight()) {
+
+            // Check and correct y boundary
+            if (y < 0) {
+                y = 0;
+                yDirection *= -1;
+            } else if (y + animatedImage.getHeight(this) > getHeight()) {
+                y = getHeight() - animatedImage.getHeight(this);
                 yDirection *= -1;
             }
         }

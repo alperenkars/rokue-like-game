@@ -49,61 +49,92 @@ class MainMenuUITest {
     @Test
     void testAnimation() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
+        final AssertionError[] assertionError = new AssertionError[1];
+        
         SwingUtilities.invokeLater(() -> {
-            //should be interactable
-            MainMenuUI.AnimatedBackgroundPanel panel = ((TestableMainMenuUI) mainMenuUI).getAnimatedPanel();
+            try {
+                //should be interactable
+                MainMenuUI.AnimatedBackgroundPanel panel = ((TestableMainMenuUI) mainMenuUI).getAnimatedPanel();
 
-            // get initial position
-            Point initialPos = panel.getCurrentPosition(); 
-            panel.updatePosition(); // Step the animation
-            Point afterPos = panel.getCurrentPosition(); 
+                // get initial position
+                Point initialPos = panel.getCurrentPosition(); 
+                panel.updatePosition(); // Step the animation
+                Point afterPos = panel.getCurrentPosition(); 
 
-            // position change test
-            assertNotEquals(initialPos, afterPos, "position should change after update");
-
-            latch.countDown();
+                // position change test
+                assertNotEquals(initialPos, afterPos, "position should change after update");
+            } catch (AssertionError e) {
+                assertionError[0] = e;
+            } finally {
+                latch.countDown();
+            }
         });
+        
         latch.await(3, TimeUnit.SECONDS);
+        
+        if (assertionError[0] != null) {
+            throw assertionError[0];
+        }
     }
 
     @Test
     void testTrailLength() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
+        final AssertionError[] assertionError = new AssertionError[1];
+        
         SwingUtilities.invokeLater(() -> {
-            MainMenuUI.AnimatedBackgroundPanel panel = ((TestableMainMenuUI) mainMenuUI).getAnimatedPanel();
-            int maxLength = panel.getMaxTrailLength();
+            try {
+                MainMenuUI.AnimatedBackgroundPanel panel = ((TestableMainMenuUI) mainMenuUI).getAnimatedPanel();
+                int maxLength = panel.getMaxTrailLength();
 
-            // test max trail length and if it follows momo
-            for (int i = 0; i < maxLength + 5; i++) {
-                panel.updatePosition();
+                // test max trail length and if it follows momo
+                for (int i = 0; i < maxLength + 5; i++) {
+                    panel.updatePosition();
+                }
+
+                int actualTrailSize = panel.getTrailSize();
+                assertEquals(maxLength, actualTrailSize, "trail should maintain max length");
+            } catch (AssertionError e) {
+                assertionError[0] = e;
+            } finally {
+                latch.countDown();
             }
-
-            int actualTrailSize = panel.getTrailSize();
-            assertEquals(maxLength, actualTrailSize, "trail should maintain max length");
-
-            latch.countDown();
         });
+        
         latch.await(3, TimeUnit.SECONDS);
+        
+        if (assertionError[0] != null) {
+            throw assertionError[0];
+        }
     }
 
     @Test
     void testBoundaryBehavior() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
+        final AssertionError[] assertionError = new AssertionError[1];
+        
         SwingUtilities.invokeLater(() -> {
-            MainMenuUI.AnimatedBackgroundPanel panel = ((TestableMainMenuUI) mainMenuUI).getAnimatedPanel();
+            try {
+                MainMenuUI.AnimatedBackgroundPanel panel = ((TestableMainMenuUI) mainMenuUI).getAnimatedPanel();
 
-            // force the panel to surpass the right boundary
-            
-            panel.setCurrentX(WINDOW_WIDTH + 10);
+                // force the panel to surpass the right boundary
+                panel.setCurrentX(WINDOW_WIDTH + 10);
+                panel.updatePosition();
+                Point currentPos = panel.getCurrentPosition();
 
-            panel.updatePosition();
-            Point currentPos = panel.getCurrentPosition();
-
-            // it should bounce or reverse direction, so x should be within window
-            assertTrue(currentPos.x < WINDOW_WIDTH, "should bounce from the window boundary");
-
-            latch.countDown();
+                // it should bounce or reverse direction, so x should be within window
+                assertTrue(currentPos.x < WINDOW_WIDTH, "should bounce from the window boundary");
+            } catch (AssertionError e) {
+                assertionError[0] = e;
+            } finally {
+                latch.countDown();
+            }
         });
+        
         latch.await(3, TimeUnit.SECONDS);
+        
+        if (assertionError[0] != null) {
+            throw assertionError[0];
+        }
     }
 }
