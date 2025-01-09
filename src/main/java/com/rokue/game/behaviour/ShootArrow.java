@@ -7,6 +7,32 @@ public class ShootArrow implements MonsterBehaviour {
     private static final int SHOOT_COOLDOWN = 90; // 90 frames = 1.5 seconds at 60 FPS
     private int cooldownCounter = 0;
 
+    /**
+     * Simulates an archer monster shooting an arrow at the hero.
+     * 
+     * @requires 
+     *   - hero != null
+     *   - monster != null
+     *   - hero.getPosition() != null
+     *   - monster.getPosition() != null
+     *   - hero.getEventManager() != null
+     * 
+     * @modifies
+     *   - this.cooldownCounter
+     *   - hero's state (through event notification)
+     * 
+     * @effects
+     *   - If cooldownCounter > 0:
+     *     - Decrements cooldownCounter by 1
+     *     - No other effects
+     *   - If cooldownCounter == 0:
+     *     - Calculates distance between monster and hero
+     *     - If distance <= 4.0:
+     *       - Notifies "HERO_HIT_BY_ARROW" event
+     *       - Sets cooldownCounter to SHOOT_COOLDOWN (90)
+     *     - If distance > 4.0:
+     *       - Only logs a miss message
+     */
     @Override
     public void act(Hero hero, Monster monster) {
         if (cooldownCounter > 0) {
