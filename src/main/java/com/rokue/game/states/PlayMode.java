@@ -217,17 +217,48 @@ public class PlayMode implements GameState {
             eventManager.unsubscribe("HERO_STABBED", null);
             eventManager.unsubscribe("RUNE_TELEPORTED", null);
             eventManager.unsubscribe("HERO_DEAD", null);
+
+            // Reset all game state
+            resetGameState();
         } finally {
             updateLock.unlock();
         }
     }
 
-    public void handleActions(List<IAction> actions) {
-        for (IAction action : actions) {
-            if (action instanceof MoveAction) {
-                MoveAction moveAction = (MoveAction) action;
-                this.hero.move(moveAction.getDirection(), this.currentHall);
+    private void resetGameState() {
+        hallTransitionLock.lock();
+        try {
+            // Reset all counters and collections
+            monsterSpawnCounter = 0;
+            enchantmentSpawnCounter = 0;
+            synchronized(enchantmentLock) {
+                enchantmentTimers.clear();
             }
+
+            // Reset all halls
+            for (Hall hall : halls) {
+                synchronized(hall) {
+                    hall.clearMonsters();
+                    hall.clearEnchantments();
+                    hall.setRune(null);
+                    hall.setHero(null);
+                }
+            }
+
+            // Reset current hall to first hall
+            synchronized(this) {
+                currentHall = halls.get(0);
+                // Reset hero position and state
+                if (hero != null) {
+                    hero.setPosition(START_POSITION);
+                }
+                currentHall.setHero(hero);
+            }
+
+            // Reset pause state
+            paused = false;
+        } finally {
+            hallTransitionLock.unlock();
         }
     }
 
@@ -299,5 +330,14 @@ public class PlayMode implements GameState {
     public int getRemainingTime() {
         GameTimer timer = gameTimer; // Local reference for thread safety
         return timer != null ? timer.getRemainingTime() : 0;
+    }
+
+    public void handleActions(List<IAction> actions) {
+        for (IAction action : actions) {
+            if (action instanceof MoveAction) {
+                MoveAction moveAction = (MoveAction) action;
+                this.hero.move(moveAction.getDirection(), this.currentHall);
+            }
+        }
     }
 }
