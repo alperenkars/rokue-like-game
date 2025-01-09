@@ -23,4 +23,10 @@ public class EventManager {
             }
         }
     }
+
+    public void unsubscribeAll(String eventType) {
+        if (listeners.containsKey(eventType)) {
+            listeners.get(eventType).clear();
+        }
+    }
 }

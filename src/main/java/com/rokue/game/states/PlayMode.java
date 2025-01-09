@@ -165,18 +165,33 @@ public boolean isPaused() {
         }
     }
 
+    private void resetState() {
+        monsterSpawnCounter = 0;
+        enchantmentSpawnCounter = 0;
+        enchantmentTimers.clear();
+        currentHall.clearMonsters();
+        currentHall.clearEnchantments();
+    }
+
     private void onRuneCollected() {
         System.out.println("Rune collected!");
 
         int nextHallIndex = halls.indexOf(currentHall) + 1;
         if (nextHallIndex < halls.size()) {
+            resetState(); // Reset state before changing hall
             currentHall = halls.get(nextHallIndex);
             System.out.println("Moving to the next hall: " + currentHall.getName());
+            if (gameTimer != null) {
+                gameTimer.stop(); // Ensure old timer is stopped
+            }
             gameTimer.start(PlayMode.START_TIME);
             hero.setPosition(PlayMode.START_POSITION);
             Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
             currentHall.setRune(rune);
         } else {
+            if (gameTimer != null) {
+                gameTimer.stop();
+            }
             eventManager.notify("GAME_COMPLETED", null);
             System.out.println("All halls completed. You win!");
         }

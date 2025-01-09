@@ -17,7 +17,6 @@ public class GameTimer {
         this.eventManager = eventManager;
         this.remainingTime = 0;
         this.isPaused = false;
-        this.timer = new Timer();
 
         eventManager.subscribe("ADD_TIME", (eventType, data) -> {
             int timeToAdd = (int) data;
@@ -27,25 +26,51 @@ public class GameTimer {
     }
 
     public void start(int initialTime) {
+        if (initialTime <= 0) {
+            throw new IllegalArgumentException("Initial time must be positive");
+        }
+        
         synchronized (lock) {
+            cleanup(); // Clean up existing timer
+            timer = new Timer();
             this.remainingTime = initialTime;
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    if (!isPaused) {
-                        tick();
+                    synchronized (lock) {
+                        if (!isPaused) {
+                            tick();
+                        }
                     }
                 }
             }, 0, TICK_INTERVAL);
         }
     }
 
+    private void cleanup() {
+        if (timer != null) {
+            timer.cancel();
+            timer.purge();
+            timer = null;
+        }
+    }
+
+    public void stop() {
+        synchronized (lock) {
+            cleanup();
+        }
+    }
+
     public void pause() {
-        isPaused = true;
+        synchronized (lock) {
+            isPaused = true;
+        }
     }
 
     public void resume() {
-        isPaused = false;
+        synchronized (lock) {
+            isPaused = false;
+        }
     }
 
     public void addTime(int seconds) {
@@ -74,9 +99,5 @@ public class GameTimer {
 
     public boolean isPaused() {
         return isPaused;
-    }
-
-    public void stop() {
-        timer.cancel();
     }
 }
