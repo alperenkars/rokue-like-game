@@ -4,8 +4,8 @@ import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.monsters.Monster;
 
 public class ShootArrow implements MonsterBehaviour {
-    private static final int SHOOT_COOLDOWN = 90; // 90 frames = 1.5 seconds at 60 FPS
-    private int cooldownCounter = 0;
+    private static final long SHOOT_COOLDOWN_MS = 1500; // 1.5 seconds in milliseconds
+    private long lastShootTime = 0;
 
     /**
      * Simulates an archer monster shooting an arrow at the hero.
@@ -18,25 +18,24 @@ public class ShootArrow implements MonsterBehaviour {
      *   - hero.getEventManager() != null
      * 
      * @modifies
-     *   - this.cooldownCounter
+     *   - this.lastShootTime
      *   - hero's state (through event notification)
      * 
      * @effects
-     *   - If cooldownCounter > 0:
-     *     - Decrements cooldownCounter by 1
-     *     - No other effects
-     *   - If cooldownCounter == 0:
+     *   - If not enough time has passed since last shot:
+     *     - No effects
+     *   - If enough time has passed:
      *     - Calculates distance between monster and hero
      *     - If distance <= 4.0:
      *       - Notifies "HERO_HIT_BY_ARROW" event
-     *       - Sets cooldownCounter to SHOOT_COOLDOWN (90)
+     *       - Updates lastShootTime
      *     - If distance > 4.0:
      *       - Only logs a miss message
      */
     @Override
     public void act(Hero hero, Monster monster) {
-        if (cooldownCounter > 0) {
-            cooldownCounter--;
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastShootTime < SHOOT_COOLDOWN_MS) {
             return;
         }
 
@@ -44,7 +43,7 @@ public class ShootArrow implements MonsterBehaviour {
         if (dist <= 4.0) {
             System.out.println("ShootArrow: The arrow hits the hero!");
             hero.getEventManager().notify("HERO_HIT_BY_ARROW", null);
-            cooldownCounter = SHOOT_COOLDOWN;
+            lastShootTime = currentTime;
         } else {
             System.out.println("ShootArrow: The arrow missed the hero. Distance: " + dist);
         }

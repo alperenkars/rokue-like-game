@@ -59,6 +59,12 @@ public class GameSystem {
             MainMenuUI mainMenuUI = new MainMenuUI(mainMenu);
             transitionTo(mainMenu, mainMenuUI);
         });
+
+        eventManager.subscribe("GAME_OVER", (eventType, data) -> {
+            MainMenu mainMenu = new MainMenu(eventManager);
+            MainMenuUI mainMenuUI = new MainMenuUI(mainMenu);
+            transitionTo(mainMenu, mainMenuUI);
+        });
     }
 
     public void transitionTo(GameState newState, JPanel newUI) {

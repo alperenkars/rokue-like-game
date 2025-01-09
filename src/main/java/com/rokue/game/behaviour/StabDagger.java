@@ -4,12 +4,12 @@ import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.monsters.Monster;
 
 public class StabDagger implements MonsterBehaviour {
-    private static final int STAB_COOLDOWN = 90; // 90 frames = 1.5 seconds at 60 FPS
-    private int cooldownCounter = 0;
+    private static final long STAB_COOLDOWN_MS = 1500; // 1.5 seconds in milliseconds
+    private long lastStabTime = 0;
 
     public void act(Hero hero, Monster monster) {
-        if (cooldownCounter > 0) {
-            cooldownCounter--;
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastStabTime < STAB_COOLDOWN_MS) {
             return;
         }
 
@@ -17,7 +17,7 @@ public class StabDagger implements MonsterBehaviour {
         if (dist <= 1.0) { // Distance of 1.0 means adjacent (including diagonals)
             System.out.println("Stab Dagger: The fighter stabs the hero!");
             hero.getEventManager().notify("HERO_STABBED", null);
-            cooldownCounter = STAB_COOLDOWN;
+            lastStabTime = currentTime;
         } else {
             System.out.println("Stab Dagger: Fighter is too far to stab. Distance: " + dist);
         }

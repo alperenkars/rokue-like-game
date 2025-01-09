@@ -1,25 +1,23 @@
 package com.rokue.game;
 
 import com.rokue.game.events.EventManager;
-import javax.swing.Timer;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class GameTimer {
 
     private static final int TICK_INTERVAL = 1000; // Timer ticks every second
-    private int remainingTime;
-    private boolean isPaused = false;
+    private volatile int remainingTime;
+    private volatile boolean isPaused = false;
     private Timer timer;
-    private EventManager eventManager;
+    private final EventManager eventManager;
+    private final Object lock = new Object();
 
     public GameTimer(EventManager eventManager) {
         this.eventManager = eventManager;
         this.remainingTime = 0;
         this.isPaused = false;
-        this.timer = new Timer(TICK_INTERVAL, e -> {
-            if (!isPaused) {
-                tick();
-            }
-        });
+        this.timer = new Timer();
 
         eventManager.subscribe("ADD_TIME", (eventType, data) -> {
             int timeToAdd = (int) data;
@@ -29,8 +27,17 @@ public class GameTimer {
     }
 
     public void start(int initialTime) {
-        this.remainingTime = initialTime;
-        timer.start();
+        synchronized (lock) {
+            this.remainingTime = initialTime;
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    if (!isPaused) {
+                        tick();
+                    }
+                }
+            }, 0, TICK_INTERVAL);
+        }
     }
 
     public void pause() {
@@ -42,20 +49,26 @@ public class GameTimer {
     }
 
     public void addTime(int seconds) {
-        remainingTime += seconds;
+        synchronized (lock) {
+            remainingTime += seconds;
+        }
     }
 
     public int getRemainingTime() {
-        return remainingTime;
+        synchronized (lock) {
+            return remainingTime;
+        }
     }
 
     private void tick() {
-        if (!isPaused && remainingTime > 0) {
-            remainingTime--;
-            eventManager.notify("TIMER_TICK", remainingTime);
-        } else if (!isPaused && remainingTime <= 0) {
-            stop();
-            eventManager.notify("TIME_EXPIRED", null);
+        synchronized (lock) {
+            if (!isPaused && remainingTime > 0) {
+                remainingTime--;
+                eventManager.notify("TIMER_TICK", remainingTime);
+            } else if (!isPaused && remainingTime <= 0) {
+                stop();
+                eventManager.notify("TIME_EXPIRED", null);
+            }
         }
     }
 
@@ -64,6 +77,6 @@ public class GameTimer {
     }
 
     public void stop() {
-        timer.stop();
+        timer.cancel();
     }
 }
