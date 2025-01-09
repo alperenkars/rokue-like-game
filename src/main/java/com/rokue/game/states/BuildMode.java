@@ -93,6 +93,21 @@ public class BuildMode implements GameState {
         return true;
     }
 
+
+    /**
+     * Checks if all halls meet their minimum object requirements.
+     *
+     * Requires:
+     * - The `halls` list must not be null.
+     * - Each hall in the `halls` list must be properly initialized with a minimum object requirement.
+     *
+     * Modifies:
+     * - Does not modify any fields or objects.
+     *
+     * Effects:
+     * - Returns `true` if all halls in the `halls` list satisfy their minimum object requirements.
+     * - Returns `false` if at least one hall does not meet its requirement.
+     **/
     public boolean areAllHallsSatisfied() {
         for (Hall hall : halls) {
             if (!hall.isRequirementMet()) {
