@@ -91,7 +91,7 @@ class ShootArrowTest {
      * - After cooldown expires, can shoot again
      */
     @Test
-    void testCooldownBehavior() {
+    void testCooldownBehavior() throws InterruptedException {
         // Arrange
         Position heroPos = new Position(0, 0);
         Position monsterPos = new Position(2, 2);
@@ -103,10 +103,7 @@ class ShootArrowTest {
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
         
-        // Simulate 90 frames (complete cooldown)
-        for (int i = 0; i < 90; i++) {
-            shootArrow.act(hero, monster);
-        }
+        Thread.sleep(1600); //cooldown and plus some buffer
         
         // Next shot after cooldown - should hit again
         shootArrow.act(hero, monster);
