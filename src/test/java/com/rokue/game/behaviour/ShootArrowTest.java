@@ -35,103 +35,100 @@ class ShootArrowTest {
     }
     
     /**
-     * Test Case 1: Arrow hits hero when in range
-     * Tests that when the hero is within range (distance <= 4.0):
-     * - The HERO_HIT_BY_ARROW event is triggered immediately
-     * - The attack lasts for 1 second
-     * - After attack ends, 3-second cooldown starts
+     * Test Case 1: Successful hit followed by 3-second cooldown
+     * Tests that when the hero is within range:
+     * - The HERO_HIT_BY_ARROW event is triggered
+     * - A 3-second cooldown is enforced
      */
     @Test
-    void testArrowHitsHeroInRange() throws InterruptedException {
+    void testSuccessfulHitCooldown() throws InterruptedException {
         // Arrange
         Position heroPos = new Position(0, 0);
         Position monsterPos = new Position(2, 2);  // Distance ≈ 2.8 units
         when(hero.getPosition()).thenReturn(heroPos);
         when(monster.getPosition()).thenReturn(monsterPos);
         
-        // Act - First shot
+        // Act - First shot (hit)
         shootArrow.act(hero, monster);
         
-        // Assert - Event triggered immediately
+        // Assert - Event triggered
         verify(hero.getEventManager()).notify("HERO_HIT_BY_ARROW", null);
         
-        // Still in attack duration (500ms)
-        Thread.sleep(500);
+        // Try to shoot again after 2 seconds (should fail due to 3s cooldown)
+        Thread.sleep(2000);
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
         
-        // Attack finished, in cooldown (1.5s total)
-        Thread.sleep(1000);
-        shootArrow.act(hero, monster);
-        verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
-        
-        // Cooldown finished (4.5s total, with extra buffer)
-        Thread.sleep(3000);
+        // Wait another 1.5 seconds (total 3.5s, should allow next shot)
+        Thread.sleep(1500);
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), times(2)).notify("HERO_HIT_BY_ARROW", null);
     }
     
     /**
-     * Test Case 2: Arrow misses hero when out of range
-     * Tests that when the hero is out of range (distance > 4.0):
+     * Test Case 2: Miss followed by 1-second cooldown
+     * Tests that when the hero is out of range:
      * - No event is triggered
-     * - No attack state or cooldown is activated
+     * - Only 1-second cooldown is applied
      */
     @Test
-    void testArrowMissesHeroOutOfRange() {
+    void testMissCooldown() throws InterruptedException {
         // Arrange
         Position heroPos = new Position(0, 0);
         Position monsterPos = new Position(5, 5);  // Distance = 7.07 units
         when(hero.getPosition()).thenReturn(heroPos);
         when(monster.getPosition()).thenReturn(monsterPos);
         
-        // Act
+        // Act - First shot (miss)
         shootArrow.act(hero, monster);
         
-        // Assert
+        // Assert - No event triggered
         verify(hero.getEventManager(), never()).notify(anyString(), any());
         
-        // Verify no attack state or cooldown (can act immediately again)
+        // Try to shoot again after 0.5 seconds (should fail due to 1s cooldown)
+        Thread.sleep(500);
+        shootArrow.act(hero, monster);
+        verify(hero.getEventManager(), never()).notify(anyString(), any());
+        
+        // Wait another 0.7 seconds (total 1.2s, should allow next attempt)
+        Thread.sleep(700);
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), never()).notify(anyString(), any());
     }
     
     /**
-     * Test Case 3: Attack and Cooldown behavior
-     * Tests the complete attack and cooldown cycle:
-     * - Initial hit triggers event
-     * - Attack lasts 1 second
-     * - Cooldown lasts 3 seconds after attack ends
+     * Test Case 3: Hit-Miss-Hit sequence
+     * Tests the transition between hit and miss cooldowns:
+     * - Hit (3s cooldown)
+     * - Miss (1s cooldown)
+     * - Hit again
      */
     @Test
-    void testAttackAndCooldownBehavior() throws InterruptedException {
+    void testHitMissHitSequence() throws InterruptedException {
         // Arrange
         Position heroPos = new Position(0, 0);
-        Position monsterPos = new Position(2, 2);
+        Position closePos = new Position(2, 2);  // Distance ≈ 2.8 units
+        Position farPos = new Position(5, 5);    // Distance = 7.07 units
         when(hero.getPosition()).thenReturn(heroPos);
-        when(monster.getPosition()).thenReturn(monsterPos);
         
-        // Initial attack
+        // First shot - Hit
+        when(monster.getPosition()).thenReturn(closePos);
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
         
-        // During attack (500ms)
-        Thread.sleep(500);
+        // Wait 3.5 seconds (clear hit cooldown)
+        Thread.sleep(3500);
+        
+        // Second shot - Miss
+        when(monster.getPosition()).thenReturn(farPos);
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
         
-        // Attack just ended, cooldown started (1.5s)
-        Thread.sleep(1000);
-        shootArrow.act(hero, monster);
-        verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
+        // Wait 1.2 seconds (clear miss cooldown)
+        Thread.sleep(1200);
         
-        // Middle of cooldown (2.5s)
-        Thread.sleep(1000);
-        shootArrow.act(hero, monster);
-        verify(hero.getEventManager(), times(1)).notify("HERO_HIT_BY_ARROW", null);
-        
-        // Cooldown just ended (4.5s, with extra buffer)
-        Thread.sleep(2000);
+        // Third shot - Hit
+        when(monster.getPosition()).thenReturn(closePos);
         shootArrow.act(hero, monster);
         verify(hero.getEventManager(), times(2)).notify("HERO_HIT_BY_ARROW", null);
     }

@@ -21,6 +21,7 @@ public class Hall {
     private int minObjectRequirement;
     private Position luringGemPosition;
     private List<Enchantment> enchantments;
+    private Hero hero;
 
 
     public Hall(String name, int width, int height, int minObjectRequirement) {
@@ -228,5 +229,13 @@ public class Hall {
 
     public void clearEnchantments() {
         enchantments.clear();
+    }
+
+    public void setHero(Hero hero) {
+        this.hero = hero;
+    }
+
+    public Hero getHero() {
+        return hero;
     }
 }

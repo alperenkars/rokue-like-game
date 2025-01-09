@@ -44,6 +44,7 @@ public class PlayMode implements GameState {
         this.currentHall = halls.get(0);
         this.hero = hero;
         this.eventManager = eventManager;
+        this.currentHall.setHero(hero);
     }
 
     public void enter(GameSystem system) {
@@ -180,6 +181,7 @@ public boolean isPaused() {
         if (nextHallIndex < halls.size()) {
             resetState(); // Reset state before changing hall
             currentHall = halls.get(nextHallIndex);
+            currentHall.setHero(hero);
             System.out.println("Moving to the next hall: " + currentHall.getName());
             if (gameTimer != null) {
                 gameTimer.stop(); // Ensure old timer is stopped
