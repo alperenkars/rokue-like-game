@@ -1,0 +1,126 @@
+package com.rokue.ui;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.MouseEvent;
+import java.awt.event.KeyListener;
+
+import javax.swing.JFrame;
+
+import com.rokue.game.states.PlayMode;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+public class PlayModeUITest {
+    private PlayModeUI playModeUI;
+    private PlayMode playMode;
+    private JFrame gameWindow;
+
+    @BeforeEach
+    public void setUp() {
+        playMode = mock(PlayMode.class);
+        gameWindow = mock(JFrame.class);
+        
+        when(gameWindow.getKeyListeners()).thenReturn(new KeyListener[0]);
+        
+        playModeUI = new PlayModeUI(playMode, gameWindow);
+    }
+
+    /**
+     * Test 1: Single button click pauses the game correctly.
+     *
+     * Requires:
+     * - The PlayModeUI instance must be properly initialized.
+     * - The pause button coordinates must be correctly calculated.
+     *
+     * Modifies:
+     * - The state of the PlayMode instance.
+     *
+     * Effects:
+     * - Simulates a mouse click on the pause button.
+     * - Verifies that the game is paused and resumed correctly.
+     */
+
+    @Test
+    public void testSingleButtonClickPausesGame() {
+        int buttonX = playModeUI.getWidth() - 40 - 20;
+        int buttonY = 20;
+
+        MouseEvent clickEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
+        playModeUI.mouseClicked(clickEvent);
+
+        verify(playMode).pause();
+        assertTrue(playModeUI.isPaused());
+
+        playModeUI.mouseClicked(clickEvent);
+
+        verify(playMode).resume();
+        assertFalse(playModeUI.isPaused());
+    }
+
+    /**
+     * Test 2: Multiple button clicks in quick succession.
+     *
+     * Requires:
+     * - The PlayModeUI instance must be properly initialized.
+     * - The pause button coordinates must be correctly calculated.
+     *
+     * Modifies:
+     * - The state of the PlayMode instance.
+     *
+     * Effects:
+     * - Simulates multiple mouse clicks on the pause button.
+     * - Verifies that the game is paused and resumed correctly.
+     */
+
+    @Test
+    public void testMultipleButtonClicks() {
+        int buttonX = playModeUI.getWidth() - 40 - 20;
+        int buttonY = 20;
+
+        MouseEvent clickEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
+        playModeUI.mouseClicked(clickEvent);
+        playModeUI.mouseClicked(clickEvent);
+        playModeUI.mouseClicked(clickEvent);
+
+        verify(playMode, times(2)).pause();
+        verify(playMode, times(1)).resume();
+    }
+
+    /**
+     * Test 3: Clicking when the game is already paused or in an invalid state.
+     *
+     * Requires:
+     * - The PlayModeUI instance must be properly initialized.
+     * - The pause button coordinates must be correctly calculated.
+     *
+     * Modifies:
+     * - The state of the PlayMode instance.
+     *
+     * Effects:
+     * - Simulates mouse clicks on the pause button when the game is already paused.
+     * - Verifies that the game handles these scenarios correctly.
+     */
+    @Test
+    public void testClickWhenGameAlreadyPaused() {
+        int buttonX = playModeUI.getWidth() - 40 - 20;
+        int buttonY = 20;
+
+        MouseEvent clickEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
+        playModeUI.mouseClicked(clickEvent);
+
+        verify(playMode).pause();
+        assertTrue(playModeUI.isPaused());
+
+        playModeUI.mouseClicked(clickEvent);
+
+        verify(playMode).resume();
+        assertFalse(playModeUI.isPaused());
+
+        playModeUI.mouseClicked(clickEvent);
+
+        verify(playMode, times(2)).pause();
+        assertTrue(playModeUI.isPaused());
+    }
+}

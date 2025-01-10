@@ -265,4 +265,8 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
             g.fillOval(heartX + (i * (heartSize + 5)), heartY, heartSize, heartSize);
         }
     }
+
+    public boolean isPaused() {
+        return isPaused;
+    }
 }
