@@ -22,6 +22,30 @@ import com.rokue.game.factories.EnchantmentFactory;
 import com.rokue.game.factories.MonsterFactory;
 import com.rokue.game.util.Position;
 
+/**
+ * PlayMode represents the active gameplay state in the RoKUe-Like game.
+ * It manages the game's core mechanics including hall transitions, monster spawning,
+ * enchantment management, and game events.
+ * 
+ * @requires
+ *   - halls != null and not empty
+ *   - hero != null
+ *   - eventManager != null
+ *   - All halls in the list are properly initialized
+ *   - Hero has valid position and lives > 0
+ * 
+ * @modifies
+ *   - currentHall state (monsters, enchantments, rune)
+ *   - hero state (position, lives)
+ *   - game timer state
+ *   - monster and enchantment spawn counters
+ * 
+ * @effects
+ *   - Maintains game state according to game rules
+ *   - Spawns monsters and enchantments at regular intervals
+ *   - Handles hall transitions when runes are collected
+ *   - Manages hero state and game over conditions
+ */
 public class PlayMode implements GameState {
 
     private Hall currentHall;
@@ -44,6 +68,25 @@ public class PlayMode implements GameState {
     private final Object enchantmentLock = new Object();
 
 
+    /**
+     * Creates a new PlayMode instance with the given halls, hero, and event manager.
+     * 
+     * @requires
+     *   - halls != null and not empty
+     *   - hero != null
+     *   - eventManager != null
+     * 
+     * @modifies
+     *   - this.halls
+     *   - this.currentHall
+     *   - this.hero
+     *   - this.eventManager
+     * 
+     * @effects
+     *   - Initializes PlayMode with the first hall as current
+     *   - Sets up the hero in the current hall
+     *   - Prepares event management system
+     */
     public PlayMode(List<Hall> halls, Hero hero, EventManager eventManager) {
         this.halls = halls;
         this.currentHall = halls.get(0);
@@ -132,6 +175,27 @@ public class PlayMode implements GameState {
         });
     }
 
+    /**
+     * Updates the game state for one frame.
+     * 
+     * @requires
+     *   - system != null
+     *   - currentHall != null
+     *   - hero != null
+     *   - Not in a transitioning state
+     * 
+     * @modifies
+     *   - currentHall state (monsters, enchantments)
+     *   - monsterSpawnCounter
+     *   - enchantmentSpawnCounter
+     *   - enchantmentTimers
+     * 
+     * @effects
+     *   - Updates hall state
+     *   - Spawns monsters if interval reached
+     *   - Spawns enchantments if interval reached
+     *   - Updates enchantment timers and removes expired enchantments
+     */
     public void update(GameSystem system) {
         if (!paused) {
             updateLock.lock();
@@ -179,6 +243,20 @@ public class PlayMode implements GameState {
     }
 
 
+    /**
+     * Pauses the game.
+     * 
+     * @requires
+     *   - Game is not already paused
+     * 
+     * @modifies
+     *   - this.paused
+     *   - gameTimer state
+     * 
+     * @effects
+     *   - Sets game to paused state
+     *   - Pauses the game timer if it exists
+     */
     public synchronized void pause() {
         if (!paused) {
             this.paused = true;
@@ -189,6 +267,20 @@ public class PlayMode implements GameState {
     }
 
 
+    /**
+     * Resumes the game from a paused state.
+     * 
+     * @requires
+     *   - Game is currently paused
+     * 
+     * @modifies
+     *   - this.paused
+     *   - gameTimer state
+     * 
+     * @effects
+     *   - Sets game to unpaused state
+     *   - Resumes the game timer if it exists
+     */
     public synchronized void resume() {
         if (paused) {
             this.paused = false;
@@ -225,6 +317,26 @@ public class PlayMode implements GameState {
         }
     }
 
+    /**
+     * Resets the game state.
+     * 
+     * @requires
+     *   - halls != null
+     *   - All halls are properly initialized
+     * 
+     * @modifies
+     *   - All halls' state
+     *   - currentHall
+     *   - hero position
+     *   - monster and enchantment states
+     *   - spawn counters
+     * 
+     * @effects
+     *   - Clears all monsters and enchantments
+     *   - Resets hero to starting position
+     *   - Resets all game counters
+     *   - Returns to first hall
+     */
     private void resetGameState() {
         hallTransitionLock.lock();
         try {
@@ -285,6 +397,25 @@ public class PlayMode implements GameState {
         }
     }
 
+    /**
+     * Handles rune collection and hall transition.
+     * 
+     * @requires
+     *   - Game is not paused
+     *   - currentHall != null
+     *   - halls list is properly initialized
+     * 
+     * @modifies
+     *   - currentHall
+     *   - hero position
+     *   - game timer
+     *   - monster and enchantment states
+     * 
+     * @effects
+     *   - Transitions to next hall if available
+     *   - Resets game state for new hall
+     *   - Triggers game completion if last hall
+     */
     private void onRuneCollected() {
         hallTransitionLock.lock();
         try {
