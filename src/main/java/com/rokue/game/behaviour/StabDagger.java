@@ -9,6 +9,39 @@ public class StabDagger implements MonsterBehaviour {
     private long lastStabTime = 0;
     private boolean wasLastStabHit = false;
 
+
+/**
+ * Simulates a fighter monster attempting to stab the hero with a dagger.
+ * 
+ * @requires 
+ *   - hero != null
+ *   - monster != null
+ *   - hero.getPosition() != null
+ *   - monster.getPosition() != null
+ *   - hero.getEventManager() != null
+ * 
+ * @modifies
+ *   - this.lastStabTime
+ *   - this.wasLastStabHit
+ *   - hero's state (through event notification)
+ * 
+ * @effects
+ *   - Checks the time since the last stab:
+ *     - If the time elapsed < cooldown:
+ *       - No action is taken
+ *     - If the time elapsed >= cooldown:
+ *       - Calculates the distance between monster and hero
+ *       - If distance <= 1.0:
+ *         - Notifies "HERO_STABBED" event
+ *         - Updates lastStabTime to the current time
+ *         - Sets wasLastStabHit to true
+ *       - If distance > 1.0:
+ *         - Logs a miss message
+ *         - Updates lastStabTime to the current time
+ *         - Sets wasLastStabHit to false
+ */
+
+
     public void act(Hero hero, Monster monster) {
         long currentTime = System.currentTimeMillis();
         long cooldown = wasLastStabHit ? HIT_COOLDOWN_MS : MISS_COOLDOWN_MS;
