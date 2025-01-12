@@ -1,13 +1,14 @@
 package com.rokue.game.entities;
 
-import com.rokue.game.util.Position;
-
 import java.util.Random;
+
+import com.rokue.game.util.Position;
 
 public class Rune {
 
     protected Position position;
     private Random rand = new Random();
+    private boolean collected = false;
 
     public Rune(Position position) {
         this.position = position;
@@ -21,7 +22,12 @@ public class Rune {
         this.position = position;
     }
 
-    public void setCollected(boolean b) {
+    public void setCollected(boolean collected) {
+        this.collected = collected;
+    }
+
+    public boolean isCollected() {
+        return collected;
     }
 
     public void moveRandomly(Hall hall) {
