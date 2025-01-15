@@ -1,5 +1,7 @@
 package com.rokue.game.entities;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -9,14 +11,16 @@ import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
 public class Hero {
+    private final List<String> inventory; //for the enchantments
     private volatile Position position;
     private final AtomicInteger lives;
     private EventManager eventManager;
     private volatile boolean isDead = false;
     private final ReentrantLock movementLock = new ReentrantLock();
 
-    public Hero(Position startPosition, EventManager eventManager) {
+    public Hero(Position startPosition, EventManager eventManager, List<String> inventory) {
         this.position = startPosition;
+        this.inventory = new ArrayList<>();
         this.lives = new AtomicInteger(3); // Default lives
         this.eventManager = eventManager;
     }
@@ -101,5 +105,22 @@ public class Hero {
 
     public EventManager getEventManager() {
         return eventManager;
+    }
+    public List<String> getInventory() {
+        return inventory;
+    }
+    public void addToInventory(String item) {
+        inventory.add(item);
+        System.out.println("Hero: Added " + item + " to inventory.");
+    }
+    public void removeFromInventory(String item) {
+        if (inventory.remove(item)) {
+            System.out.println("Hero: Removed " + item + " from inventory.");
+        } else {
+            System.out.println("Hero: Item " + item + " not found in inventory.");
+        }
+    }
+    public boolean hasItem(String item) {
+        return inventory.contains(item);
     }
 }

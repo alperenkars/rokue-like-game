@@ -14,6 +14,7 @@ import com.rokue.ui.MainMenuUI;
 import com.rokue.ui.PlayModeUI;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -42,7 +43,7 @@ public class GameSystem {
 
         eventManager.subscribe("SWITCH_TO_PLAY_MODE", (eventType, data) -> {
             List<Hall> halls = (List<Hall>) data;
-            Hero hero = new Hero(PlayMode.START_POSITION, eventManager);
+            Hero hero = new Hero(PlayMode.START_POSITION, eventManager, new ArrayList<>());
             PlayMode playMode = new PlayMode(halls, hero, eventManager);
             PlayModeUI playModeUI = new PlayModeUI(playMode, gameWindow);
             transitionTo(playMode, playModeUI);

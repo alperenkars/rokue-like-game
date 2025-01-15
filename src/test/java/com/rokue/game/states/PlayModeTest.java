@@ -34,7 +34,7 @@ class PlayModeTest {
         halls = new ArrayList<>();
         firstHall = new Hall("Test Hall", 20, 20, 1);
         halls.add(firstHall);
-        hero = new Hero(PlayMode.START_POSITION, eventManager);
+        hero = new Hero(PlayMode.START_POSITION, eventManager, new ArrayList<>());
         
         playMode = new PlayMode(halls, hero, eventManager);
     }
