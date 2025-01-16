@@ -6,19 +6,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.rokue.game.actions.MoveAction;
+import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
 public class Hero {
-    private final List<String> inventory; //for the enchantments
+    private final List<Object> inventory; //for the enchantments
     private volatile Position position;
     private final AtomicInteger lives;
     private EventManager eventManager;
     private volatile boolean isDead = false;
     private final ReentrantLock movementLock = new ReentrantLock();
 
-    public Hero(Position startPosition, EventManager eventManager, List<String> inventory) {
+    public Hero(Position startPosition, EventManager eventManager, List<Object> inventory) {
         this.position = startPosition;
         this.inventory = new ArrayList<>();
         this.lives = new AtomicInteger(3); // Default lives
@@ -70,10 +71,12 @@ public class Hero {
     public void interactWithRune(Cell cell, Hall currentHall) {
         if (cell.getContent() instanceof Rune) {
             Rune rune = (Rune) cell.getContent();
-            rune.setCollected(true);
-            System.out.println("Hero: Collected a rune at position " + cell.getPosition());
-
-            eventManager.notify("RUNE_COLLECTED", currentHall);
+            if (!rune.isCollected()) {
+                rune.collect(this); // rune added to inventory
+                cell.setContent(null); // rune removed from cell and clear the cell
+                System.out.println("Hero: Collected a rune at position " + rune.getPosition());
+                eventManager.notify("RUNE_COLLECTED", currentHall);
+            }
         }
     }
 
@@ -106,21 +109,39 @@ public class Hero {
     public EventManager getEventManager() {
         return eventManager;
     }
-    public List<String> getInventory() {
+    public List<Object> getInventory() {
         return inventory;
     }
-    public void addToInventory(String item) {
-        inventory.add(item);
-        System.out.println("Hero: Added " + item + " to inventory.");
+    public void addToInventory(Object item) {
+        if (item != null) {
+            inventory.add(item);
+            if (item instanceof Rune) {
+                Rune rune = (Rune) item;
+                System.out.println("Hero: Added Rune at position " + rune.getPosition() + " to inventory.");
+            } else if (item instanceof Enchantment) {
+                System.out.println("Hero: Added " + item.getClass().getSimpleName() + " to inventory.");
+            }
+        }
     }
-    public void removeFromInventory(String item) {
+    public void removeFromInventory(Object item) {
         if (inventory.remove(item)) {
             System.out.println("Hero: Removed " + item + " from inventory.");
         } else {
             System.out.println("Hero: Item " + item + " not found in inventory.");
         }
     }
-    public boolean hasItem(String item) {
+    public boolean hasItem(Object item) {
         return inventory.contains(item);
+    }
+    public void displayInventory() {
+        System.out.println("Inventory contains:");
+        for (Object item : inventory) {
+            if (item instanceof Rune) {
+                Rune rune = (Rune) item;
+                System.out.println("- Rune at position: " + rune.getPosition());
+            } else if (item instanceof Enchantment) {
+                System.out.println("- Enchantment: " + item.getClass().getSimpleName());
+            }
+        }
     }
 }

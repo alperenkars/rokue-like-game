@@ -30,6 +30,12 @@ public class Rune {
         return collected;
     }
 
+    public void collect(Hero hero) {
+        hero.addToInventory(this); // rune added to inventory
+        this.setCollected(true);
+        System.out.println("Rune at position " +position+ " collected and added to inventory!");
+    }
+
     public void moveRandomly(Hall hall) {
         int attempts = 0;
         final int MAX_ATTEMPTS = 100; // Prevent infinite loop

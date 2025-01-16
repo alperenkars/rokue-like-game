@@ -419,9 +419,15 @@ public class PlayMode implements GameState {
     private void onRuneCollected() {
         hallTransitionLock.lock();
         try {
-            System.out.println("Rune collected!");
+            Rune rune1 = currentHall.getRune();
+            if (rune1 != null && !rune1.isCollected()) {
+                rune1.collect(hero);
+                currentHall.setRune(null);
+                System.out.println("Rune collected and added to inventory!");
+            }
 
-            int nextHallIndex = halls.indexOf(currentHall) + 1;
+
+                int nextHallIndex = halls.indexOf(currentHall) + 1;
             if (nextHallIndex < halls.size()) {
                 resetState(); // Reset state before changing hall
                 
