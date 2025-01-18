@@ -6,6 +6,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.rokue.game.actions.MoveAction;
+import com.rokue.game.entities.enchantments.CloakOfProtection;
+import com.rokue.game.entities.enchantments.Enchantment;
+import com.rokue.game.entities.enchantments.ExtraLife;
+import com.rokue.game.entities.enchantments.ExtraTime;
+import com.rokue.game.entities.enchantments.LuringGem;
+import com.rokue.game.entities.enchantments.Reveal;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
@@ -76,6 +82,33 @@ public class Hero {
                 System.out.println("Hero: Collected a rune at position " + cell.getPosition());
                 eventManager.notify("RUNE_COLLECTED", currentHall);
             }
+        } else if (cell.getContent() instanceof Enchantment) {
+            Enchantment enchantment = (Enchantment) cell.getContent();
+            if (!enchantment.isCollected()) {
+                enchantment.collect();
+                cell.setContent(null);  // Clear the cell
+                
+                // Direct effect enchantments
+                if (enchantment instanceof ExtraLife) {
+                    enchantment.applyEffect(this);
+                    eventManager.notify("SHOW_INFO", "Extra Life collected! You gained an additional life.");
+                } else if (enchantment instanceof ExtraTime) {
+                    enchantment.applyEffect(this);
+                    eventManager.notify("SHOW_INFO", "Extra Time collected! 5 seconds added to the timer.");
+                } else {
+                    // Store in inventory for later use
+                    if (enchantment instanceof CloakOfProtection) {
+                        addToInventory("CLOAK");
+                        eventManager.notify("SHOW_INFO", "Cloak of Protection added to inventory! Use it to become invisible to archers.");
+                    } else if (enchantment instanceof Reveal) {
+                        addToInventory("REVEAL");
+                        eventManager.notify("SHOW_INFO", "Reveal enchantment added to inventory! Use it to reveal the rune's location.");
+                    } else if (enchantment instanceof LuringGem) {
+                        addToInventory("LURE");
+                        eventManager.notify("SHOW_INFO", "Luring Gem added to inventory! Use it to distract fighter monsters.");
+                    }
+                }
+            }
         }
     }
 
@@ -143,5 +176,27 @@ public class Hero {
     }
     public boolean hasItem(String item) {
         return inventory.contains(item);
+    }
+
+    public void useEnchantment(String type) {
+        if (hasItem(type)) {
+            removeFromInventory(type);
+            switch (type) {
+                case "CLOAK":
+                    System.out.println("Hero: Using Cloak of Protection");
+                    new CloakOfProtection(null).applyEffect(this);
+                    break;
+                case "REVEAL":
+                    System.out.println("Hero: Using Reveal enchantment");
+                    new Reveal(null).applyEffect(this);
+                    break;
+                case "LURE":
+                    System.out.println("Hero: Using Luring Gem");
+                    new LuringGem(null).applyEffect(this);
+                    break;
+            }
+        } else {
+            System.out.println("Hero: Cannot use " + type + " - not in inventory");
+        }
     }
 }

@@ -12,15 +12,20 @@ import com.rokue.game.GameSystem;
 import com.rokue.game.GameTimer;
 import com.rokue.game.actions.IAction;
 import com.rokue.game.actions.MoveAction;
+import com.rokue.game.behaviour.ShootArrow;
+import com.rokue.game.behaviour.StabDagger;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.ArcherMonster;
+import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.factories.EnchantmentFactory;
 import com.rokue.game.factories.MonsterFactory;
 import com.rokue.game.util.Position;
+import com.rokue.game.util.Cell;
 
 /**
  * PlayMode represents the active gameplay state in the RoKUe-Like game.
@@ -55,12 +60,12 @@ public class PlayMode implements GameState {
     private EventManager eventManager;
     public static final int START_TIME = 60;
     public static final Position START_POSITION = new Position(0, 0);
-    private static final int MONSTER_SPAWN_INTERVAL = 480; // (60 FPS * 8)
-    private static final int ENCHANTMENT_SPAWN_INTERVAL = 720; // (60 FPS * 12)
-    private static final int ENCHANTMENT_DESPAWN_TIME = 360; //  (60 FPS * 6)
-    private int monsterSpawnCounter = 0;
-    private int enchantmentSpawnCounter = 0;
-    private Map<Enchantment, Integer> enchantmentTimers = new HashMap<>();
+    private static final long MONSTER_SPAWN_INTERVAL_MS = 8000; // 8 seconds
+    private static final long ENCHANTMENT_SPAWN_INTERVAL_MS = 12000; // 12 seconds
+    private static final long ENCHANTMENT_DESPAWN_TIME_MS = 6000; // 6 seconds
+    private long lastMonsterSpawnTime = 0;
+    private long lastEnchantmentSpawnTime = 0;
+    private Map<Enchantment, Long> enchantmentDespawnTimes = new HashMap<>();
     private Random rand = new Random();
     private volatile boolean paused = false;
     private final ReentrantLock updateLock = new ReentrantLock();
@@ -129,6 +134,145 @@ public class PlayMode implements GameState {
                         hero.decreaseLife();
                         System.out.println("PlayMode: Hero stabbed by fighter! Lives remaining: " + hero.getLives());
                     }
+                }
+            }
+        });
+
+        // Info message event
+        eventManager.subscribe("SHOW_INFO", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (data instanceof String) {
+                    System.out.println("PlayMode: " + data);
+                    eventManager.notify("DISPLAY_INFO", data);
+                }
+            }
+        });
+
+        // Add lives event
+        eventManager.subscribe("ADD_LIVES", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                synchronized (hero) {
+                    if (!isPaused()) {
+                        int currentLives = hero.getLives();
+                        currentLives++;
+                        System.out.println("PlayMode: Added 1 life. Lives: " + currentLives);
+                    }
+                }
+            }
+        });
+
+        // Add time event
+        eventManager.subscribe("ADD_TIME", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Integer) {
+                    int seconds = (Integer) data;
+                    gameTimer.addTime(seconds);
+                    System.out.println("PlayMode: Added " + seconds + " seconds to timer");
+                }
+            }
+        });
+
+        // Invisibility event
+        eventManager.subscribe("INVISIBILITY", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Integer) {
+                    int duration = (Integer) data;
+                    // Set invisibility flag for archer monsters
+                    for (Monster monster : currentHall.getMonsters()) {
+                        if (monster instanceof ArcherMonster) {
+                            ((ShootArrow)monster.getBehaviour()).setHeroInvisible(true);
+                        }
+                    }
+                    // Schedule visibility restoration after duration
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(duration * 1000);
+                            if (!isPaused()) {
+                                for (Monster monster : currentHall.getMonsters()) {
+                                    if (monster instanceof ArcherMonster) {
+                                        ((ShootArrow)monster.getBehaviour()).setHeroInvisible(false);
+                                    }
+                                }
+                                System.out.println("PlayMode: Hero visibility restored");
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }).start();
+                    System.out.println("PlayMode: Hero invisible for " + duration + " seconds");
+                }
+            }
+        });
+
+        // Reveal rune event
+        eventManager.subscribe("REVEAL_RUNE", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Integer) {
+                    int duration = (Integer) data;
+                    Rune rune = currentHall.getRune();
+                    if (rune != null && rune.getHiddenUnder() != null) {
+                        Position runePos = rune.getHiddenUnder().getPosition();
+                        // Calculate the 4x4 region that will contain the rune
+                        // Ensure the region stays within hall bounds
+                        int startX = Math.max(0, runePos.getX() - 1);
+                        int startY = Math.max(0, runePos.getY() - 1);
+                        int endX = Math.min(currentHall.getWidth() - 1, startX + 3);
+                        int endY = Math.min(currentHall.getHeight() - 1, startY + 3);
+                        
+                        // Adjust start positions if region would exceed bounds
+                        if (endX - startX < 3) startX = Math.max(0, endX - 3);
+                        if (endY - startY < 3) startY = Math.max(0, endY - 3);
+
+                        Position highlightStart = new Position(startX, startY);
+                        Position highlightEnd = new Position(endX, endY);
+                        
+                        // Notify UI to show highlight
+                        Map<String, Position> highlightData = new HashMap<>();
+                        highlightData.put("start", highlightStart);
+                        highlightData.put("end", highlightEnd);
+                        eventManager.notify("SHOW_HIGHLIGHT", highlightData);
+                        
+                        // Schedule highlight removal
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(duration * 1000);
+                                if (!isPaused()) {
+                                    eventManager.notify("HIDE_HIGHLIGHT", null);
+                                    System.out.println("PlayMode: Rune highlight removed");
+                                }
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }).start();
+                        
+                        System.out.println("PlayMode: Highlighting region from " + highlightStart + " to " + highlightEnd);
+                    }
+                }
+            }
+        });
+
+        // Distraction event
+        eventManager.subscribe("DISTRACTION", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused()) {
+                    // Set a random position for fighter monsters to be attracted to
+                    Position distractionPos = new Position(
+                        rand.nextInt(currentHall.getWidth()),
+                        rand.nextInt(currentHall.getHeight())
+                    );
+                    // Update fighter monsters' target position
+                    for (Monster monster : currentHall.getMonsters()) {
+                        if (monster instanceof FighterMonster) {
+                            ((StabDagger)monster.getBehaviour()).setTargetPosition(distractionPos);
+                        }
+                    }
+                    System.out.println("PlayMode: Fighter monsters distracted to " + distractionPos);
                 }
             }
         });
@@ -202,37 +346,38 @@ public class PlayMode implements GameState {
             try {
                 currentHall.update(hero);
                 
-                monsterSpawnCounter++;
-                if (monsterSpawnCounter >= MONSTER_SPAWN_INTERVAL) {
+                long currentTime = System.currentTimeMillis();
+                
+                // Monster spawning
+                if (currentTime - lastMonsterSpawnTime >= MONSTER_SPAWN_INTERVAL_MS) {
                     Monster monster = MonsterFactory.createRandomMonster(currentHall);
                     synchronized(currentHall) {
                         currentHall.addMonster(monster);
                     }
-                    monsterSpawnCounter = 0;
+                    lastMonsterSpawnTime = currentTime;
                 }
 
-                enchantmentSpawnCounter++;
-                if (enchantmentSpawnCounter >= ENCHANTMENT_SPAWN_INTERVAL) {
+                // Enchantment spawning
+                if (currentTime - lastEnchantmentSpawnTime >= ENCHANTMENT_SPAWN_INTERVAL_MS) {
                     Enchantment enchantment = EnchantmentFactory.createRandomEnchantment(currentHall);
                     synchronized(enchantmentLock) {
                         currentHall.addEnchantment(enchantment);
-                        enchantmentTimers.put(enchantment, ENCHANTMENT_DESPAWN_TIME);
+                        enchantmentDespawnTimes.put(enchantment, currentTime + ENCHANTMENT_DESPAWN_TIME_MS);
                     }
-                    enchantmentSpawnCounter = 0;
+                    lastEnchantmentSpawnTime = currentTime;
                 }
 
+                // Enchantment despawning
                 synchronized(enchantmentLock) {
-                    Iterator<Map.Entry<Enchantment, Integer>> it = enchantmentTimers.entrySet().iterator();
+                    Iterator<Map.Entry<Enchantment, Long>> it = enchantmentDespawnTimes.entrySet().iterator();
                     while (it.hasNext()) {
-                        Map.Entry<Enchantment, Integer> entry = it.next();
+                        Map.Entry<Enchantment, Long> entry = it.next();
                         Enchantment enchantment = entry.getKey();
-                        int timeLeft = entry.getValue() - 1;
+                        long despawnTime = entry.getValue();
                         
-                        if (timeLeft <= 0) {
+                        if (currentTime >= despawnTime) {
                             currentHall.removeEnchantment(enchantment);
                             it.remove();
-                        } else {
-                            entry.setValue(timeLeft);
                         }
                     }
                 }
@@ -341,10 +486,10 @@ public class PlayMode implements GameState {
         hallTransitionLock.lock();
         try {
             // Reset all counters and collections
-            monsterSpawnCounter = 0;
-            enchantmentSpawnCounter = 0;
+            lastMonsterSpawnTime = System.currentTimeMillis();
+            lastEnchantmentSpawnTime = System.currentTimeMillis();
             synchronized(enchantmentLock) {
-                enchantmentTimers.clear();
+                enchantmentDespawnTimes.clear();
             }
 
             // Reset all halls
@@ -383,10 +528,10 @@ public class PlayMode implements GameState {
     private void resetState() {
         updateLock.lock();
         try {
-            monsterSpawnCounter = 0;
-            enchantmentSpawnCounter = 0;
+            lastMonsterSpawnTime = System.currentTimeMillis();
+            lastEnchantmentSpawnTime = System.currentTimeMillis();
             synchronized(enchantmentLock) {
-                enchantmentTimers.clear();
+                enchantmentDespawnTimes.clear();
             }
             synchronized(currentHall) {
                 currentHall.clearMonsters();

@@ -264,10 +264,13 @@ public class Hall {
             }
         }
 
-        // Check if hero is on a revealed rune
+        // Check if hero is on a revealed rune or enchantment
         Cell currentCell = getCell(hero.getPosition());
-        if (currentCell != null && currentCell.getContent() instanceof Rune) {
-            hero.interactWithRune(currentCell, this);
+        if (currentCell != null) {
+            Object content = currentCell.getContent();
+            if (content instanceof Rune || content instanceof Enchantment) {
+                hero.interactWithRune(currentCell, this);
+            }
         }
     }
 
