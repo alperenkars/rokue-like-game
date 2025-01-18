@@ -3,6 +3,7 @@ package com.rokue.ui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -10,8 +11,9 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -22,6 +24,12 @@ import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
+import com.rokue.game.entities.enchantments.CloakOfProtection;
+import com.rokue.game.entities.enchantments.Enchantment;
+import com.rokue.game.entities.enchantments.ExtraLife;
+import com.rokue.game.entities.enchantments.ExtraTime;
+import com.rokue.game.entities.enchantments.LuringGem;
+import com.rokue.game.entities.enchantments.Reveal;
 import com.rokue.game.entities.monsters.ArcherMonster;
 import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
@@ -29,6 +37,7 @@ import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.render.IRenderer;
 import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
+import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
 public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
@@ -53,9 +62,17 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     // UI Panel constants
     private final int uiPanelWidth = 200;
     private final int uiPanelHeight = 400;
+    private final int inventoryStartY = 220; // Moved further down
+    private final int inventoryItemSize = 32;
+    private final int inventorySpacing = 5;
+    private final int INVENTORY_GRID_SIZE = 3; // 3x2 grid
+    private String infoMessage = ""; // For displaying game info
+    private long infoMessageTime = 0;
+    private static final long INFO_MESSAGE_DURATION = 5000; // 3 seconds
 
     private BufferedImage playerImage;
     private BufferedImage runeImage;
+    private BufferedImage inventoryBgImage;
 
     // Monster images
     private BufferedImage archerImage;
@@ -69,6 +86,12 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private BufferedImage luringGemImage;
     private BufferedImage extraLifeImage;
 
+    private Position highlightStart = null;
+    private Position highlightEnd = null;
+    private final Color HIGHLIGHT_COLOR = new Color(255, 255, 0, 50); // Semi-transparent yellow
+
+    private boolean waitingForLuringDirection = false;
+
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
         this.playMode = playMode;
         this.gameWindow = gameWindow;
@@ -76,6 +99,88 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         this.setBackground(BACKGROUND_COLOR);
         addMouseListener(this);
         loadImages();
+
+        // Subscribe to highlight events
+        playMode.getEventManager().subscribe("SHOW_HIGHLIGHT", (eventType, data) -> {
+            if (data instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Position> highlightData = (Map<String, Position>) data;
+                highlightStart = highlightData.get("start");
+                highlightEnd = highlightData.get("end");
+                repaint();
+            }
+        });
+
+        playMode.getEventManager().subscribe("HIDE_HIGHLIGHT", (eventType, data) -> {
+            highlightStart = null;
+            highlightEnd = null;
+            repaint();
+        });
+
+        // Add key listener for enchantment shortcuts
+        this.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (!playMode.isPaused()) {
+                    Hero hero = playMode.getHero();
+                    char key = Character.toUpperCase(e.getKeyChar());
+                    
+                    if (waitingForLuringDirection) {
+                        Position heroPos = hero.getPosition();
+                        Position targetPos = null;
+                        
+                        switch (key) {
+                            case 'W':
+                                targetPos = new Position(heroPos.getX(), heroPos.getY() - 1);
+                                break;
+                            case 'S':
+                                targetPos = new Position(heroPos.getX(), heroPos.getY() + 1);
+                                break;
+                            case 'A':
+                                targetPos = new Position(heroPos.getX() - 1, heroPos.getY());
+                                break;
+                            case 'D':
+                                targetPos = new Position(heroPos.getX() + 1, heroPos.getY());
+                                break;
+                            default:
+                                return; // Ignore other keys when waiting for direction
+                        }
+                        
+                        if (targetPos != null) {
+                            hero.removeFromInventory("LURE");
+                            playMode.getEventManager().notify("DISTRACTION", targetPos);
+                            showInfoMessage(getEnchantmentMessage("LURE"));
+                        }
+                        waitingForLuringDirection = false;
+                    } else {
+                        switch (key) {
+                            case 'R':
+                                if (hero.hasItem("REVEAL")) {
+                                    hero.useEnchantment("REVEAL");
+                                    showInfoMessage(getEnchantmentMessage("REVEAL"));
+                                }
+                                break;
+                            case 'P':
+                                if (hero.hasItem("CLOAK")) {
+                                    hero.useEnchantment("CLOAK");
+                                    showInfoMessage(getEnchantmentMessage("CLOAK"));
+                                }
+                                break;
+                            case 'B':
+                                if (hero.hasItem("LURE")) {
+                                    waitingForLuringDirection = true;
+                                    showInfoMessage("Press WASD to choose the direction for the Luring Gem");
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Make panel focusable to receive keyboard events
+        this.setFocusable(true);
+        this.requestFocusInWindow();
     }
 
     private void drawHall(Graphics2D g, Hall hall) {
@@ -135,6 +240,33 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
             }
         }
 
+        // Draw enchantments
+        for (Enchantment enchantment : hall.getEnchantments()) {
+            if (!enchantment.isCollected()) {
+                Position enchantPos = enchantment.getPosition();
+                BufferedImage enchantmentImage = null;
+
+                if (enchantment instanceof CloakOfProtection) {
+                    enchantmentImage = cloakImage;
+                } else if (enchantment instanceof Reveal) {
+                    enchantmentImage = revealImage;
+                } else if (enchantment instanceof LuringGem) {
+                    enchantmentImage = luringGemImage;
+                } else if (enchantment instanceof ExtraLife) {
+                    enchantmentImage = extraLifeImage;
+                } else if (enchantment instanceof ExtraTime) {
+                    enchantmentImage = extraTimeImage;
+                }
+
+                if (enchantmentImage != null) {
+                    g.drawImage(enchantmentImage,
+                               hallX + enchantPos.getX() * cellWidth,
+                               hallY + enchantPos.getY() * cellHeight,
+                               cellWidth, cellHeight, this);
+                }
+            }
+        }
+
         // Draw hero
         Hero hero = hall.getHero();
         if (hero != null) {
@@ -143,6 +275,16 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
                        hallX + heroPos.getX() * cellWidth, 
                        hallY + heroPos.getY() * cellHeight, 
                        cellWidth, cellHeight, this);
+        }
+
+        // Draw highlight area if active
+        if (highlightStart != null && highlightEnd != null) {
+            g.setColor(HIGHLIGHT_COLOR);
+            int x = hallX + highlightStart.getX() * cellWidth;
+            int y = hallY + highlightStart.getY() * cellHeight;
+            int width = (highlightEnd.getX() - highlightStart.getX() + 1) * cellWidth;
+            int height = (highlightEnd.getY() - highlightStart.getY() + 1) * cellHeight;
+            g.fillRect(x, y, width, height);
         }
     }
 
@@ -157,6 +299,12 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     @Override
     public void mousePressed(MouseEvent e) {
         if (!playMode.isPaused()) {
+            // Check inventory clicks
+            if (isInventoryClick(e.getX(), e.getY())) {
+                handleInventoryClick(e.getX(), e.getY());
+                return;
+            }
+
             // Convert mouse coordinates to grid position
             int gridX = (e.getX() - hallX) / cellWidth;
             int gridY = (e.getY() - hallY) / cellHeight;
@@ -164,16 +312,25 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
 
             Hall currentHall = playMode.getCurrentHall();
             if (currentHall != null && currentHall.isWithinBounds(clickPos)) {
-                DungeonObject clickedObject = currentHall.getObjectAt(clickPos);
-                if (clickedObject != null) {
-                    Hero hero = playMode.getHero();
-                    // Check if hero is adjacent to the clicked object
-                    if (isAdjacentToHero(clickPos, hero.getPosition())) {
-                        // Check if there's a rune under the clicked object
-                        if (hero.checkForRune(hero.getPosition(), currentHall, clickedObject)) {
-                            // Remove the object only if a rune was found
-                            currentHall.removeObject(clickPos);
-                            repaint(); // Force immediate repaint
+                Cell clickedCell = currentHall.getCell(clickPos);
+                if (clickedCell != null) {
+                    // Check if clicked on an enchantment
+                    if (clickedCell.getContent() instanceof Enchantment) {
+                        Hero hero = playMode.getHero();
+                        hero.interactWithObject(clickedCell, currentHall);
+                        repaint();
+                        return;
+                    }
+
+                    // Check for rune under objects (existing logic)
+                    DungeonObject clickedObject = currentHall.getObjectAt(clickPos);
+                    if (clickedObject != null) {
+                        Hero hero = playMode.getHero();
+                        if (isAdjacentToHero(clickPos, hero.getPosition())) {
+                            if (hero.checkForRune(hero.getPosition(), currentHall, clickedObject)) {
+                                currentHall.removeObject(clickPos);
+                                repaint();
+                            }
                         }
                     }
                 }
@@ -236,21 +393,90 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     }
 
     private void drawUI(Graphics2D g, Hero hero) {
+        // Draw UI background
         g.setColor(new Color(43, 27, 44));
-        g.fillRect(hallX + hallWidth + 20, 100, 200, 400);
+        g.fillRect(hallX + hallWidth + 20, 100, uiPanelWidth, uiPanelHeight);
 
+        // Draw time
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Time: " + playMode.getRemainingTime() + " seconds", 
-                    hallX + hallWidth + 20 + 10, 100 + 30);
+                    hallX + hallWidth + 30, 130);
 
+        // Draw lives
         int heartSize = 20;
-        int heartX = hallX + hallWidth + 20 + 10;
-        int heartY = 100 + 50;
+        int heartX = hallX + hallWidth + 30;
+        int heartY = 150;
         for (int i = 0; i < hero.getLives(); i++) {
             g.setColor(Color.RED);
             g.fillOval(heartX + (i * (heartSize + 5)), heartY, heartSize, heartSize);
         }
+
+        // Draw inventory
+        drawInventory(g, hero);
+    }
+
+    private void drawInventory(Graphics2D g, Hero hero) {
+        int inventoryX = hallX + hallWidth + 30;
+        
+        // Draw inventory background
+        g.drawImage(inventoryBgImage, inventoryX - 10, inventoryStartY, uiPanelWidth - 20, 150, null);
+
+        // Calculate grid positions
+        int gridStartX = inventoryX + 25;
+        int gridStartY = inventoryStartY + 40;
+        List<String> inventory = hero.getInventory();
+        
+        // Draw items in a 3x2 grid
+        for (int i = 0; i < Math.min(6, inventory.size()); i++) {
+            int row = i / INVENTORY_GRID_SIZE;
+            int col = i % INVENTORY_GRID_SIZE;
+            int x = gridStartX + col * (inventoryItemSize + inventorySpacing);
+            int y = gridStartY + row * (inventoryItemSize + inventorySpacing);
+            
+            String item = inventory.get(i);
+            BufferedImage itemImage = null;
+            switch (item) {
+                case "CLOAK":
+                    itemImage = cloakImage;
+                    break;
+                case "REVEAL":
+                    itemImage = revealImage;
+                    break;
+                case "LURE":
+                    itemImage = luringGemImage;
+                    break;
+            }
+            
+            if (itemImage != null) {
+                g.drawImage(itemImage, x, y, inventoryItemSize, inventoryItemSize, null);
+            }
+        }
+
+        // Draw info message if active
+        if (System.currentTimeMillis() - infoMessageTime < INFO_MESSAGE_DURATION) {
+            g.setColor(Color.RED);
+            g.setFont(new Font("Arial", Font.BOLD, 12));
+            drawWrappedText(g, infoMessage, inventoryX, inventoryStartY + 200, uiPanelWidth - 40);
+        }
+    }
+
+    private void drawWrappedText(Graphics2D g, String text, int x, int y, int maxWidth) {
+        FontMetrics fm = g.getFontMetrics();
+        String[] words = text.split(" ");
+        StringBuilder line = new StringBuilder();
+        int lineHeight = fm.getHeight();
+
+        for (String word : words) {
+            if (fm.stringWidth(line + word) < maxWidth) {
+                line.append(word).append(" ");
+            } else {
+                g.drawString(line.toString(), x, y);
+                y += lineHeight;
+                line = new StringBuilder(word + " ");
+            }
+        }
+        g.drawString(line.toString(), x, y);
     }
 
     public boolean isPaused() {
@@ -259,15 +485,21 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
 
     private void loadImages() {
         try {
-            playerImage = ImageIO.read(new File("src/main/resources/assets/player.png"));
-            runeImage = ImageIO.read(new File("src/main/resources/assets/rune.png"));
-            pauseImage = ImageIO.read(new File("src/main/resources/assets/pausebutton.png"));
-            resumeImage = ImageIO.read(new File("src/main/resources/assets/resumebutton.png"));
+            playerImage = ImageIO.read(getClass().getResource("/assets/player.png"));
+            runeImage = ImageIO.read(getClass().getResource("/assets/rune.png"));
+            archerImage = ImageIO.read(getClass().getResource("/assets/archer.png"));
+            fighterImage = ImageIO.read(getClass().getResource("/assets/fighter.png"));
+            wizardImage = ImageIO.read(getClass().getResource("/assets/wizard.png"));
+            pauseImage = ImageIO.read(getClass().getResource("/assets/pausebutton.png"));
+            resumeImage = ImageIO.read(getClass().getResource("/assets/resumebutton.png"));
+            inventoryBgImage = ImageIO.read(getClass().getResource("/assets/Inventory.png"));
 
-            // Load monster images
-            archerImage = ImageIO.read(new File("src/main/resources/assets/archer.png"));
-            fighterImage = ImageIO.read(new File("src/main/resources/assets/fighter.png"));
-            wizardImage = ImageIO.read(new File("src/main/resources/assets/wizard.png"));
+            // Load enchantment images
+            cloakImage = ImageIO.read(getClass().getResource("/assets/cloak.png"));
+            revealImage = ImageIO.read(getClass().getResource("/assets/reveal.png"));
+            luringGemImage = ImageIO.read(getClass().getResource("/assets/lure.png"));
+            extraLifeImage = ImageIO.read(getClass().getResource("/assets/extra_life.png"));
+            extraTimeImage = ImageIO.read(getClass().getResource("/assets/clock.png"));
 
             // Make the panel focusable to receive keyboard events
             setFocusable(true);
@@ -289,5 +521,39 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         int dx = Math.abs(objectPos.getX() - heroPos.getX());
         int dy = Math.abs(objectPos.getY() - heroPos.getY());
         return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
+    }
+
+    private boolean isInventoryClick(int x, int y) {
+        int inventoryX = hallX + hallWidth + 45; // Adjusted for grid start
+        int inventoryY = inventoryStartY + 40;
+        int gridWidth = INVENTORY_GRID_SIZE * (inventoryItemSize + inventorySpacing);
+        int gridHeight = 2 * (inventoryItemSize + inventorySpacing);
+        
+        return x >= inventoryX && x <= inventoryX + gridWidth &&
+               y >= inventoryY && y <= inventoryY + gridHeight;
+    }
+
+    private void handleInventoryClick(int x, int y) {
+        // Inventory clicks are no longer used for enchantments
+        // This method is kept for potential future inventory interactions
+    }
+
+    private String getEnchantmentMessage(String type) {
+        switch (type) {
+            case "CLOAK":
+                return "Activated Cloak of Protection (P)! You are invisible to archers for 20 seconds.";
+            case "REVEAL":
+                return "Used Reveal enchantment (R)! The rune's location is temporarily revealed.";
+            case "LURE":
+                return "Luring Gem activated! Fighter monsters will move towards that direction.";
+            default:
+                return "";
+        }
+    }
+
+    public void showInfoMessage(String message) {
+        this.infoMessage = message;
+        this.infoMessageTime = System.currentTimeMillis();
+        repaint();
     }
 }

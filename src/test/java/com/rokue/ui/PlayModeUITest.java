@@ -26,6 +26,10 @@ public class PlayModeUITest {
         playMode = mock(PlayMode.class);
         gameWindow = mock(JFrame.class);
         
+        // Mock EventManager
+        com.rokue.game.events.EventManager eventManager = mock(com.rokue.game.events.EventManager.class);
+        when(playMode.getEventManager()).thenReturn(eventManager);
+        
         when(gameWindow.getKeyListeners()).thenReturn(new KeyListener[0]);
         
         playModeUI = new PlayModeUI(playMode, gameWindow);

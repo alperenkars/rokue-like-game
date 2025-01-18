@@ -8,6 +8,11 @@ public class ShootArrow implements MonsterBehaviour {
     private static final long MISS_COOLDOWN_MS = 1000; // 1 second cooldown after miss
     private long lastShootTime = 0;
     private boolean wasLastShotHit = false;
+    private boolean heroInvisible = false;
+
+    public void setHeroInvisible(boolean invisible) {
+        this.heroInvisible = invisible;
+    }
 
     /**
      * Simulates an archer monster shooting an arrow at the hero.
@@ -36,6 +41,10 @@ public class ShootArrow implements MonsterBehaviour {
      */
     @Override
     public void act(Hero hero, Monster monster) {
+        if (heroInvisible) {
+            return; // Can't shoot if hero is invisible
+        }
+
         long currentTime = System.currentTimeMillis();
         long cooldown = wasLastShotHit ? HIT_COOLDOWN_MS : MISS_COOLDOWN_MS;
         
