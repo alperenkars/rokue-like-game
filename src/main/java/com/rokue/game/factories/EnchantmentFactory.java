@@ -19,19 +19,18 @@ public class EnchantmentFactory {
         while (true) {
             Position spawnPos = new Position(rand.nextInt(hall.getWidth()), rand.nextInt(hall.getHeight()));
             if (hall.getCell(spawnPos).getContent() == null) {
-                return new Reveal(new Position(spawnPos.getX(), spawnPos.getY()));
-//                switch (t) {
-//                    case 0:
-//                        return new ExtraTime(new Position(spawnPos.getX(), spawnPos.getY()), 5);
-//                    case 1:
-//                        return new Reveal(new Position(spawnPos.getX(), spawnPos.getY()));
-//                    case 2:
-//                        return new CloakOfProtection(new Position(spawnPos.getX(), spawnPos.getY()));
-//                    case 3:
-//                        return new LuringGem(new Position(spawnPos.getX(), spawnPos.getY()));
-//                    case 4:
-//                        return new ExtraLife(new Position(spawnPos.getX(), spawnPos.getY()));
-//                }
+                switch (t) {
+                    case 0:
+                        return new ExtraTime(new Position(spawnPos.getX(), spawnPos.getY()), 5);
+                    case 1:
+                        return new Reveal(new Position(spawnPos.getX(), spawnPos.getY()));
+                    case 2:
+                        return new CloakOfProtection(new Position(spawnPos.getX(), spawnPos.getY()));
+                    case 3:
+                        return new LuringGem(new Position(spawnPos.getX(), spawnPos.getY()));
+                    case 4:
+                        return new ExtraLife(new Position(spawnPos.getX(), spawnPos.getY()));
+                }
             }
         }
     }

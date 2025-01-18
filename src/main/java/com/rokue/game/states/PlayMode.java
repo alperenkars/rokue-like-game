@@ -376,7 +376,7 @@ public class PlayMode implements GameState {
                 
                 // Monster spawning
                 if (currentTime - lastMonsterSpawnTime >= MONSTER_SPAWN_INTERVAL_MS) {
-                    Monster monster = MonsterFactory.createRandomMonster(currentHall);
+                    Monster monster = MonsterFactory.createRandomMonster(currentHall, this);
                     synchronized(currentHall) {
                         currentHall.addMonster(monster);
                     }

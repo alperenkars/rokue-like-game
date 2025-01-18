@@ -25,7 +25,6 @@ public class TeleportRune implements MonsterBehaviour {
 
         Rune rune = currentHall.getRune();
         if (rune != null && !rune.isCollected()) {
-            rune.moveToRandomObject(currentHall);
             System.out.println("Wizard: Teleported rune to a new location");
             hero.getEventManager().notify("RUNE_TELEPORTED", currentHall);
             lastTeleportTime = currentTime;
