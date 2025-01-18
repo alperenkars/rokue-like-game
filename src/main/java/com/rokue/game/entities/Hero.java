@@ -70,11 +70,32 @@ public class Hero {
     public void interactWithRune(Cell cell, Hall currentHall) {
         if (cell.getContent() instanceof Rune) {
             Rune rune = (Rune) cell.getContent();
-            rune.setCollected(true);
-            System.out.println("Hero: Collected a rune at position " + cell.getPosition());
-
-            eventManager.notify("RUNE_COLLECTED", currentHall);
+            if (rune.isRevealed() && !rune.isCollected()) {
+                rune.setCollected(true);
+                cell.setContent(null);  // Clear the cell
+                System.out.println("Hero: Collected a rune at position " + cell.getPosition());
+                eventManager.notify("RUNE_COLLECTED", currentHall);
+            }
         }
+    }
+
+    public boolean checkForRune(Position position, Hall currentHall, DungeonObject clickedObject) {
+        // Only check the clicked object for rune
+        Rune rune = currentHall.getRune();
+        if (rune != null && clickedObject.equals(rune.getHiddenUnder()) && !rune.isCollected()) {
+            rune.setRevealed(true);
+            // Set rune position to the object's position
+            rune.setPosition(clickedObject.getPosition());
+            // Update the cell content after object is removed
+            Cell runeCell = currentHall.getCell(clickedObject.getPosition());
+            if (runeCell != null) {
+                runeCell.setContent(rune);
+            }
+            System.out.println("Hero: Found a rune hidden under " + clickedObject.getName());
+            eventManager.notify("RUNE_REVEALED", currentHall);
+            return true;
+        }
+        return false;
     }
 
     public synchronized void decreaseLife() {

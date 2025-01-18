@@ -7,15 +7,16 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import javax.swing.ImageIcon;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseEvent;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
@@ -70,49 +71,16 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
 
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
         this.playMode = playMode;
-        this.addMouseListener(this);
         this.gameWindow = gameWindow;
-        setBackground(BACKGROUND_COLOR);
-        setPreferredSize(new Dimension(hallX + hallWidth + uiPanelWidth + 40, 
-                                     hallY + hallHeight + 80));
-
-        // Make the panel focusable to receive keyboard events
-        setFocusable(true);
-        
-        // Add key listener from the game window
-        for (KeyListener listener : gameWindow.getKeyListeners()) {
-            addKeyListener(listener);
-        }
-        
-        // Request focus when created
-        requestFocusInWindow();
-
-        try {
-            playerImage = ImageIO.read(new File("src/main/resources/assets/player.png"));
-            runeImage = ImageIO.read(new File("src/main/resources/assets/rune.png"));
-
-            pauseImage = ImageIO.read(new File("src/main/resources/assets/pausebutton.png"));
-            resumeImage = ImageIO.read(new File("src/main/resources/assets/resumebutton.png"));
-
-            // Load monster images
-            archerImage = ImageIO.read(new File("src/main/resources/assets/archer.png"));
-            fighterImage = ImageIO.read(new File("src/main/resources/assets/fighter.png"));
-            wizardImage = ImageIO.read(new File("src/main/resources/assets/wizard.png"));
-
-//            // Load enchantment images
-//            extraTimeImage = ImageIO.read(new File("src/main/resources/assets/extratime.png"));
-//            revealImage = ImageIO.read(new File("src/main/resources/assets/reveal.png"));
-//            cloakImage = ImageIO.read(new File("src/main/resources/assets/cloak.png"));
-//            luringGemImage = ImageIO.read(new File("src/main/resources/assets/luringgem.png"));
-//            extraLifeImage = ImageIO.read(new File("src/main/resources/assets/extralife.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.setPreferredSize(new Dimension(900, 800));
+        this.setBackground(BACKGROUND_COLOR);
+        addMouseListener(this);
+        loadImages();
     }
 
     private void drawHall(Graphics2D g, Hall hall) {
-        // Draw grid (matching BuildModeUI's grid)
-        g.setColor(new Color(255, 255, 255, 30));  // Match BuildModeUI grid color
+        // Draw grid
+        g.setColor(new Color(255, 255, 255, 30));
         for (int x = 0; x <= hall.getWidth(); x++) {
             g.drawLine(hallX + x * cellWidth, hallY, 
                       hallX + x * cellWidth, hallY + hallHeight);
@@ -136,53 +104,45 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
             }
         }
 
-        // Draw rune
+        // Draw rune only if revealed
         Rune rune = hall.getRune();
-        if (rune != null && runeImage != null) {
+        if (rune != null && rune.isRevealed() && !rune.isCollected()) {
             Position runePos = rune.getPosition();
-            int runeX = hallX + runePos.getX() * cellWidth;
-            int runeY = hallY + runePos.getY() * cellHeight;
-            g.drawImage(runeImage,
-                       runeX,
-                       runeY,
-                       cellWidth,  // Use full cell width
-                       cellHeight, // Use full cell height
-                       null);
+            g.drawImage(runeImage, 
+                       hallX + runePos.getX() * cellWidth, 
+                       hallY + runePos.getY() * cellHeight, 
+                       cellWidth, cellHeight, this);
         }
 
-        // Draw hero with consistent size
-        Hero hero = playMode.getHero();
-        Position heroPos = hero.getPosition();
-        int heroX = hallX + heroPos.getX() * cellWidth;
-        int heroY = hallY + heroPos.getY() * cellHeight;
-        if (playerImage != null) {
-            g.drawImage(playerImage,
-                       heroX, 
-                       heroY, 
-                       cellWidth,  // Use full cell width
-                       cellHeight, // Use full cell height
-                       null);
-        }
-
-        // Draw monsters with consistent size
-        for (Monster monster : playMode.getCurrentHall().getMonsters()) {
+        // Draw monsters
+        for (Monster monster : hall.getMonsters()) {
             Position monsterPos = monster.getPosition();
-            int monsterX = hallX + monsterPos.getX() * cellWidth;
-            int monsterY = hallY + monsterPos.getY() * cellHeight;
-            
             BufferedImage monsterImage = null;
-            if (monster instanceof ArcherMonster) monsterImage = archerImage;
-            else if (monster instanceof FighterMonster) monsterImage = fighterImage;
-            else if (monster instanceof WizardMonster) monsterImage = wizardImage;
+            
+            if (monster instanceof ArcherMonster) {
+                monsterImage = archerImage;
+            } else if (monster instanceof FighterMonster) {
+                monsterImage = fighterImage;
+            } else if (monster instanceof WizardMonster) {
+                monsterImage = wizardImage;
+            }
             
             if (monsterImage != null) {
-                g.drawImage(monsterImage,
-                           monsterX,
-                           monsterY,
-                           cellWidth,  // Use full cell width
-                           cellHeight, // Use full cell height
-                           null);
+                g.drawImage(monsterImage, 
+                           hallX + monsterPos.getX() * cellWidth, 
+                           hallY + monsterPos.getY() * cellHeight, 
+                           cellWidth, cellHeight, this);
             }
+        }
+
+        // Draw hero
+        Hero hero = hall.getHero();
+        if (hero != null) {
+            Position heroPos = hero.getPosition();
+            g.drawImage(playerImage, 
+                       hallX + heroPos.getX() * cellWidth, 
+                       hallY + heroPos.getY() * cellHeight, 
+                       cellWidth, cellHeight, this);
         }
     }
 
@@ -195,15 +155,42 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
+    public void mousePressed(MouseEvent e) {
+        if (!playMode.isPaused()) {
+            // Convert mouse coordinates to grid position
+            int gridX = (e.getX() - hallX) / cellWidth;
+            int gridY = (e.getY() - hallY) / cellHeight;
+            Position clickPos = new Position(gridX, gridY);
+
+            Hall currentHall = playMode.getCurrentHall();
+            if (currentHall != null && currentHall.isWithinBounds(clickPos)) {
+                DungeonObject clickedObject = currentHall.getObjectAt(clickPos);
+                if (clickedObject != null) {
+                    Hero hero = playMode.getHero();
+                    // Check if hero is adjacent to the clicked object
+                    if (isAdjacentToHero(clickPos, hero.getPosition())) {
+                        // Check if there's a rune under the clicked object
+                        if (hero.checkForRune(hero.getPosition(), currentHall, clickedObject)) {
+                            // Remove the object only if a rune was found
+                            currentHall.removeObject(clickPos);
+                            repaint(); // Force immediate repaint
+                        }
+                    }
+                }
+            }
+        }
         checkPauseButtonClick(e.getX(), e.getY());
     }
 
     @Override
-    public void mousePressed(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+        // Empty implementation - using mousePressed instead
+    }
 
     @Override
-    public void mouseReleased(MouseEvent e) {}
+    public void mouseReleased(MouseEvent e) {
+        // Empty implementation
+    }
 
     @Override
     public void mouseEntered(MouseEvent e) {}
@@ -268,5 +255,39 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
 
     public boolean isPaused() {
         return isPaused;
+    }
+
+    private void loadImages() {
+        try {
+            playerImage = ImageIO.read(new File("src/main/resources/assets/player.png"));
+            runeImage = ImageIO.read(new File("src/main/resources/assets/rune.png"));
+            pauseImage = ImageIO.read(new File("src/main/resources/assets/pausebutton.png"));
+            resumeImage = ImageIO.read(new File("src/main/resources/assets/resumebutton.png"));
+
+            // Load monster images
+            archerImage = ImageIO.read(new File("src/main/resources/assets/archer.png"));
+            fighterImage = ImageIO.read(new File("src/main/resources/assets/fighter.png"));
+            wizardImage = ImageIO.read(new File("src/main/resources/assets/wizard.png"));
+
+            // Make the panel focusable to receive keyboard events
+            setFocusable(true);
+            
+            // Add key listener from the game window
+            for (KeyListener listener : gameWindow.getKeyListeners()) {
+                addKeyListener(listener);
+            }
+            
+            // Request focus when created
+            requestFocusInWindow();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Failed to load game assets: " + e.getMessage());
+        }
+    }
+
+    private boolean isAdjacentToHero(Position objectPos, Position heroPos) {
+        int dx = Math.abs(objectPos.getX() - heroPos.getX());
+        int dy = Math.abs(objectPos.getY() - heroPos.getY());
+        return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
     }
 }
