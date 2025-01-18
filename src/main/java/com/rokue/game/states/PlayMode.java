@@ -305,6 +305,18 @@ public class PlayMode implements GameState {
             }
         });
 
+        eventManager.subscribe("ADD_LIVES", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                synchronized (hero) {
+                    if (!isPaused()) {
+                        hero.increaseLife();
+                        System.out.println("PlayMode: Added 1 life. Lives: " + hero.getLives());
+                    }
+                }
+            }
+        });
+
         eventManager.subscribe("HERO_DEAD", new EventListener() {
             @Override
             public void onEvent(String eventType, Object data) {
@@ -621,8 +633,11 @@ public class PlayMode implements GameState {
     }
 
     public int getRemainingTime() {
-        GameTimer timer = gameTimer; // Local reference for thread safety
-        return timer != null ? timer.getRemainingTime() : 0;
+        return gameTimer != null ? gameTimer.getRemainingTime() : 0;
+    }
+
+    public EventManager getEventManager() {
+        return eventManager;
     }
 
     public void handleActions(List<IAction> actions) {

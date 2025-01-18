@@ -148,6 +148,11 @@ public class Hero {
         return lives.get();
     }
 
+    public synchronized void increaseLife() {
+        lives.incrementAndGet();
+        System.out.println("Hero: Life increased. Current lives: " + lives.get());
+    }
+
     public void setPosition(Position newPosition) {
         movementLock.lock();
         try {

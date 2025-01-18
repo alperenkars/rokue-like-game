@@ -13,6 +13,7 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -67,7 +68,7 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private final int INVENTORY_GRID_SIZE = 3; // 3x2 grid
     private String infoMessage = ""; // For displaying game info
     private long infoMessageTime = 0;
-    private static final long INFO_MESSAGE_DURATION = 3000; // 3 seconds
+    private static final long INFO_MESSAGE_DURATION = 5000; // 3 seconds
 
     private BufferedImage playerImage;
     private BufferedImage runeImage;
@@ -85,6 +86,10 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private BufferedImage luringGemImage;
     private BufferedImage extraLifeImage;
 
+    private Position highlightStart = null;
+    private Position highlightEnd = null;
+    private final Color HIGHLIGHT_COLOR = new Color(255, 255, 0, 50); // Semi-transparent yellow
+
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
         this.playMode = playMode;
         this.gameWindow = gameWindow;
@@ -92,6 +97,23 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         this.setBackground(BACKGROUND_COLOR);
         addMouseListener(this);
         loadImages();
+
+        // Subscribe to highlight events
+        playMode.getEventManager().subscribe("SHOW_HIGHLIGHT", (eventType, data) -> {
+            if (data instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Position> highlightData = (Map<String, Position>) data;
+                highlightStart = highlightData.get("start");
+                highlightEnd = highlightData.get("end");
+                repaint();
+            }
+        });
+
+        playMode.getEventManager().subscribe("HIDE_HIGHLIGHT", (eventType, data) -> {
+            highlightStart = null;
+            highlightEnd = null;
+            repaint();
+        });
     }
 
     private void drawHall(Graphics2D g, Hall hall) {
@@ -186,6 +208,16 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
                        hallX + heroPos.getX() * cellWidth, 
                        hallY + heroPos.getY() * cellHeight, 
                        cellWidth, cellHeight, this);
+        }
+
+        // Draw highlight area if active
+        if (highlightStart != null && highlightEnd != null) {
+            g.setColor(HIGHLIGHT_COLOR);
+            int x = hallX + highlightStart.getX() * cellWidth;
+            int y = hallY + highlightStart.getY() * cellHeight;
+            int width = (highlightEnd.getX() - highlightStart.getX() + 1) * cellWidth;
+            int height = (highlightEnd.getY() - highlightStart.getY() + 1) * cellHeight;
+            g.fillRect(x, y, width, height);
         }
     }
 
@@ -324,7 +356,7 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         g.drawImage(inventoryBgImage, inventoryX - 10, inventoryStartY, uiPanelWidth - 20, 150, null);
 
         // Calculate grid positions
-        int gridStartX = inventoryX + 23;
+        int gridStartX = inventoryX + 25;
         int gridStartY = inventoryStartY + 40;
         List<String> inventory = hero.getInventory();
         
@@ -356,9 +388,9 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
 
         // Draw info message if active
         if (System.currentTimeMillis() - infoMessageTime < INFO_MESSAGE_DURATION) {
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.PLAIN, 12));
-            drawWrappedText(g, infoMessage, inventoryX, inventoryStartY + 150, uiPanelWidth - 40);
+            g.setColor(Color.RED);
+            g.setFont(new Font("Arial", Font.BOLD, 12));
+            drawWrappedText(g, infoMessage, inventoryX, inventoryStartY + 200, uiPanelWidth - 40);
         }
     }
 
