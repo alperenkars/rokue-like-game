@@ -278,19 +278,15 @@ public class PlayMode implements GameState {
         eventManager.subscribe("DISTRACTION", new EventListener() {
             @Override
             public void onEvent(String eventType, Object data) {
-                if (!isPaused()) {
-                    // Set a random position for fighter monsters to be attracted to
-                    Position distractionPos = new Position(
-                        rand.nextInt(currentHall.getWidth()),
-                        rand.nextInt(currentHall.getHeight())
-                    );
+                if (!isPaused() && data instanceof Position) {
+                    Position targetPos = (Position) data;
                     // Update fighter monsters' target position
                     for (Monster monster : currentHall.getMonsters()) {
                         if (monster instanceof FighterMonster) {
-                            ((StabDagger)monster.getBehaviour()).setTargetPosition(distractionPos);
+                            ((StabDagger)monster.getBehaviour()).setTargetPosition(targetPos);
                         }
                     }
-                    System.out.println("PlayMode: Fighter monsters distracted to " + distractionPos);
+                    System.out.println("PlayMode: Fighter monsters distracted to " + targetPos);
                 }
             }
         });
@@ -595,6 +591,9 @@ public class PlayMode implements GameState {
         hallTransitionLock.lock();
         try {
             System.out.println("Rune collected!");
+
+            // Clear any existing highlight
+            eventManager.notify("HIDE_HIGHLIGHT", null);
 
             int nextHallIndex = halls.indexOf(currentHall) + 1;
             if (nextHallIndex < halls.size()) {

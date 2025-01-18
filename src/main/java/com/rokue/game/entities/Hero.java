@@ -18,6 +18,7 @@ import com.rokue.game.util.Position;
 
 public class Hero {
     private final List<String> inventory; //for the enchantments
+    private static final int MAX_INVENTORY_SIZE = 6;
     private volatile Position position;
     private final AtomicInteger lives;
     private EventManager eventManager;
@@ -41,12 +42,12 @@ public class Hero {
             Position newPosition = position;
             switch (direction) {
                 case UP:
-                    if (position.getY() > 1) {
+                    if (position.getY() > 0) {
                         newPosition = new Position(position.getX(), position.getY() - 1);
                     }
                     break;
                 case DOWN:
-                    if (position.getY() < currentHall.getHeight() - 2) {
+                    if (position.getY() < currentHall.getHeight() - 1) {
                         newPosition = new Position(position.getX(), position.getY() + 1);
                     }
                     break;
@@ -73,7 +74,7 @@ public class Hero {
         }
     }
 
-    public void interactWithRune(Cell cell, Hall currentHall) {
+    public void interactWithObject(Cell cell, Hall currentHall) {
         if (cell.getContent() instanceof Rune) {
             Rune rune = (Rune) cell.getContent();
             if (rune.isRevealed() && !rune.isCollected()) {
@@ -85,18 +86,26 @@ public class Hero {
         } else if (cell.getContent() instanceof Enchantment) {
             Enchantment enchantment = (Enchantment) cell.getContent();
             if (!enchantment.isCollected()) {
-                enchantment.collect();
-                cell.setContent(null);  // Clear the cell
-                
-                // Direct effect enchantments
-                if (enchantment instanceof ExtraLife) {
+                // Direct effect enchantments can always be collected
+                if (enchantment instanceof ExtraLife || enchantment instanceof ExtraTime) {
+                    enchantment.collect();
+                    cell.setContent(null);  // Clear the cell
                     enchantment.applyEffect(this);
-                    eventManager.notify("SHOW_INFO", "Extra Life collected! You gained an additional life.");
-                } else if (enchantment instanceof ExtraTime) {
-                    enchantment.applyEffect(this);
-                    eventManager.notify("SHOW_INFO", "Extra Time collected! 5 seconds added to the timer.");
+                    if (enchantment instanceof ExtraLife) {
+                        eventManager.notify("SHOW_INFO", "Extra Life collected! You gained an additional life.");
+                    } else {
+                        eventManager.notify("SHOW_INFO", "Extra Time collected! 5 seconds added to the timer.");
+                    }
                 } else {
-                    // Store in inventory for later use
+                    // Check inventory limit for storable enchantments
+                    if (inventory.size() >= MAX_INVENTORY_SIZE) {
+                        eventManager.notify("SHOW_INFO", "Cannot collect enchantment - inventory is full (max " + MAX_INVENTORY_SIZE + " items).");
+                        return;
+                    }
+                    
+                    enchantment.collect();
+                    cell.setContent(null);  // Clear the cell
+                    
                     if (enchantment instanceof CloakOfProtection) {
                         addToInventory("CLOAK");
                         eventManager.notify("SHOW_INFO", "Cloak of Protection added to inventory! Use it to become invisible to archers.");

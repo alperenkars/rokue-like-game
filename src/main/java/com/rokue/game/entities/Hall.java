@@ -268,7 +268,7 @@ public class Hall {
         if (currentCell != null) {
             Object content = currentCell.getContent();
             if (content instanceof Rune || content instanceof Enchantment) {
-                hero.interactWithRune(currentCell, this);
+                hero.interactWithObject(currentCell, this);
             }
         }
     }

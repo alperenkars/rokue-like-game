@@ -90,6 +90,8 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private Position highlightEnd = null;
     private final Color HIGHLIGHT_COLOR = new Color(255, 255, 0, 50); // Semi-transparent yellow
 
+    private boolean waitingForLuringDirection = false;
+
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
         this.playMode = playMode;
         this.gameWindow = gameWindow;
@@ -114,6 +116,71 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
             highlightEnd = null;
             repaint();
         });
+
+        // Add key listener for enchantment shortcuts
+        this.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (!playMode.isPaused()) {
+                    Hero hero = playMode.getHero();
+                    char key = Character.toUpperCase(e.getKeyChar());
+                    
+                    if (waitingForLuringDirection) {
+                        Position heroPos = hero.getPosition();
+                        Position targetPos = null;
+                        
+                        switch (key) {
+                            case 'W':
+                                targetPos = new Position(heroPos.getX(), heroPos.getY() - 1);
+                                break;
+                            case 'S':
+                                targetPos = new Position(heroPos.getX(), heroPos.getY() + 1);
+                                break;
+                            case 'A':
+                                targetPos = new Position(heroPos.getX() - 1, heroPos.getY());
+                                break;
+                            case 'D':
+                                targetPos = new Position(heroPos.getX() + 1, heroPos.getY());
+                                break;
+                            default:
+                                return; // Ignore other keys when waiting for direction
+                        }
+                        
+                        if (targetPos != null) {
+                            hero.removeFromInventory("LURE");
+                            playMode.getEventManager().notify("DISTRACTION", targetPos);
+                            showInfoMessage(getEnchantmentMessage("LURE"));
+                        }
+                        waitingForLuringDirection = false;
+                    } else {
+                        switch (key) {
+                            case 'R':
+                                if (hero.hasItem("REVEAL")) {
+                                    hero.useEnchantment("REVEAL");
+                                    showInfoMessage(getEnchantmentMessage("REVEAL"));
+                                }
+                                break;
+                            case 'P':
+                                if (hero.hasItem("CLOAK")) {
+                                    hero.useEnchantment("CLOAK");
+                                    showInfoMessage(getEnchantmentMessage("CLOAK"));
+                                }
+                                break;
+                            case 'B':
+                                if (hero.hasItem("LURE")) {
+                                    waitingForLuringDirection = true;
+                                    showInfoMessage("Press WASD to choose the direction for the Luring Gem");
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Make panel focusable to receive keyboard events
+        this.setFocusable(true);
+        this.requestFocusInWindow();
     }
 
     private void drawHall(Graphics2D g, Hall hall) {
@@ -250,7 +317,7 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
                     // Check if clicked on an enchantment
                     if (clickedCell.getContent() instanceof Enchantment) {
                         Hero hero = playMode.getHero();
-                        hero.interactWithRune(clickedCell, currentHall);
+                        hero.interactWithObject(clickedCell, currentHall);
                         repaint();
                         return;
                     }
@@ -467,35 +534,18 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     }
 
     private void handleInventoryClick(int x, int y) {
-        Hero hero = playMode.getHero();
-        if (hero == null) return;
-
-        int gridStartX = hallX + hallWidth + 45;
-        int gridStartY = inventoryStartY + 40;
-        
-        int col = (x - gridStartX) / (inventoryItemSize + inventorySpacing);
-        int row = (y - gridStartY) / (inventoryItemSize + inventorySpacing);
-        
-        if (col >= 0 && col < INVENTORY_GRID_SIZE && row >= 0 && row < 2) {
-            int index = row * INVENTORY_GRID_SIZE + col;
-            List<String> inventory = hero.getInventory();
-            if (index >= 0 && index < inventory.size()) {
-                String item = inventory.get(index);
-                hero.useEnchantment(item);
-                showInfoMessage(getEnchantmentMessage(item));
-                repaint();
-            }
-        }
+        // Inventory clicks are no longer used for enchantments
+        // This method is kept for potential future inventory interactions
     }
 
     private String getEnchantmentMessage(String type) {
         switch (type) {
             case "CLOAK":
-                return "Activated Cloak of Protection! You are invisible to archers for 20 seconds.";
+                return "Activated Cloak of Protection (P)! You are invisible to archers for 20 seconds.";
             case "REVEAL":
-                return "Used Reveal enchantment! The rune's location is temporarily revealed.";
+                return "Used Reveal enchantment (R)! The rune's location is temporarily revealed.";
             case "LURE":
-                return "Activated Luring Gem! Fighter monsters are now distracted.";
+                return "Luring Gem activated! Fighter monsters will move towards that direction.";
             default:
                 return "";
         }
