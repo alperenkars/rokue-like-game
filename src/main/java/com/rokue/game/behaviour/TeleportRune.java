@@ -4,9 +4,10 @@ import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.WizardMonster;
 
 public class TeleportRune implements MonsterBehaviour {
-    private static final long TELEPORT_COOLDOWN_MS = 5000; // 5 seconds
+    private static final long TELEPORT_COOLDOWN_MS =3000; // 5 seconds but updated to 3 seconds
     private long lastTeleportTime = 0;
     private Hall currentHall;
 
@@ -16,8 +17,12 @@ public class TeleportRune implements MonsterBehaviour {
 
     @Override
     public void act(Hero hero, Monster monster) {
-        if (currentHall == null) return;
-        
+        if (currentHall == null || monster == null) return;
+
+        if (monster instanceof WizardMonster && ((WizardMonster) monster).isRemoved()) {
+            return;
+        }
+
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastTeleportTime < TELEPORT_COOLDOWN_MS) {
             return;
@@ -27,6 +32,7 @@ public class TeleportRune implements MonsterBehaviour {
         if (rune != null && !rune.isCollected()) {
             rune.moveToRandomObject(currentHall);
             System.out.println("Wizard: Teleported rune to a new location");
+
             hero.getEventManager().notify("RUNE_TELEPORTED", currentHall);
             lastTeleportTime = currentTime;
         }

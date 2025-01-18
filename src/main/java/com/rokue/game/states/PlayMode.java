@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
+
+import com.rokue.game.behaviour.TeleportHero;
+import com.rokue.game.behaviour.TeleportRune;
+import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.events.EventListener;
 
 import com.rokue.game.GameSystem;
@@ -201,6 +205,57 @@ public class PlayMode implements GameState {
             updateLock.lock();
             try {
                 currentHall.update(hero);
+
+                //updated to %30 of the time wizard monster behaviour
+                boolean wizardExists = false;
+                for (Monster monster : currentHall.getMonsters()) {
+                    if (monster instanceof WizardMonster && !((WizardMonster) monster).isRemoved()) {
+                        wizardExists = true;
+                        break;
+                    }
+                }
+
+                if (wizardExists) {
+                    Iterator<Monster> monsterIterator = currentHall.getMonsters().iterator();
+                    while (monsterIterator.hasNext()) {
+                        Monster monster = monsterIterator.next();
+                        if (monster instanceof WizardMonster) {
+                            WizardMonster wizard = (WizardMonster) monster;
+
+                            if (wizard.isRemoved()) {
+                                continue;
+                            }
+
+                            double totalTime = PlayMode.START_TIME;
+                            double remainingTime = this.getRemainingTime();
+                            double percentage = remainingTime / totalTime;
+
+                            if (percentage < 0.30) {
+                                TeleportHero teleportHero = new TeleportHero(currentHall);
+                                teleportHero.act(hero, wizard);
+                                System.out.println("WizardMonster: Hero teleported!");
+                                monsterIterator.remove();
+                            } else if (percentage > 0.70) {
+                                if (!(wizard.getBehaviour() instanceof TeleportRune)) {
+                                    wizard.setBehaviour(new TeleportRune());
+                                }
+                                wizard.getBehaviour().act(hero, wizard);
+                            } else {
+
+                                    monsterIterator.remove();
+
+                            }
+                        } else {
+                            monster.update(hero, currentHall);
+                        }
+                    }
+                } else {
+                    System.out.println("No active wizard on the map. TeleportHero will not be triggered.");
+                    for (Monster monster : currentHall.getMonsters()) {
+                        monster.update(hero, currentHall);
+                    }
+                }
+
                 
                 monsterSpawnCounter++;
                 if (monsterSpawnCounter >= MONSTER_SPAWN_INTERVAL) {
