@@ -50,28 +50,24 @@ public class StabDagger implements MonsterBehaviour {
         long currentTime = System.currentTimeMillis();
         long cooldown = wasLastStabHit ? HIT_COOLDOWN_MS : MISS_COOLDOWN_MS;
         
-        // Check cooldown
         if (currentTime - lastStabTime < cooldown) {
             return;
         }
 
-        // If there's a target position (luring gem), prioritize moving towards it
         if (targetPosition != null) {
             double distToTarget = monster.getPosition().distance(targetPosition);
-            if (distToTarget <= 0.1) { // Reached the target
+            if (distToTarget <= 0.1) {
                 targetPosition = null;
             }
-            return; // Skip attacking while distracted
+            return;
         }
 
         double dist = monster.getPosition().distance(hero.getPosition());
-        if (dist <= 1.0) { // Distance of 1.0 means adjacent (including diagonals)
-            // Hit
+        if (dist <= 1.0) {
             System.out.println("Stab Dagger: The fighter stabs the hero!");
             hero.getEventManager().notify("HERO_STABBED", null);
             wasLastStabHit = true;
         } else {
-            // Miss
             System.out.println("Stab Dagger: Fighter is too far to stab. Distance: " + dist);
             wasLastStabHit = false;
         }

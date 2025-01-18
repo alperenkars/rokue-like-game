@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
-import com.rokue.game.events.EventListener;
 
 import com.rokue.game.GameSystem;
 import com.rokue.game.GameTimer;
@@ -18,14 +17,14 @@ import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.entities.enchantments.Enchantment;
-import com.rokue.game.entities.monsters.Monster;
 import com.rokue.game.entities.monsters.ArcherMonster;
 import com.rokue.game.entities.monsters.FighterMonster;
+import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.events.EventListener;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.factories.EnchantmentFactory;
 import com.rokue.game.factories.MonsterFactory;
 import com.rokue.game.util.Position;
-import com.rokue.game.util.Cell;
 
 /**
  * PlayMode represents the active gameplay state in the RoKUe-Like game.
@@ -177,6 +176,9 @@ public class PlayMode implements GameState {
 
         // Invisibility event
         eventManager.subscribe("INVISIBILITY", new EventListener() {
+            private long invisibilityEndTime = 0;
+            private boolean isInvisible = false;
+
             @Override
             public void onEvent(String eventType, Object data) {
                 if (!isPaused() && data instanceof Integer) {
@@ -187,10 +189,29 @@ public class PlayMode implements GameState {
                             ((ShootArrow)monster.getBehaviour()).setHeroInvisible(true);
                         }
                     }
-                    // Schedule visibility restoration after duration
+                    
+                    isInvisible = true;
+                    invisibilityEndTime = System.currentTimeMillis() + (duration * 1000);
+                    System.out.println("PlayMode: Hero invisible for " + duration + " seconds");
+
+                    // Start a timer to check invisibility status periodically
                     new Thread(() -> {
-                        try {
-                            Thread.sleep(duration * 1000);
+                        while (isInvisible && System.currentTimeMillis() < invisibilityEndTime) {
+                            if (isPaused()) {
+                                // If game is paused, extend the end time by the pause duration
+                                invisibilityEndTime += 100; // Extend by the sleep duration
+                            }
+                            try {
+                                Thread.sleep(100); // Check every 100ms
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        }
+                        
+                        // Only remove invisibility if it hasn't been removed already
+                        if (isInvisible) {
+                            isInvisible = false;
                             if (!isPaused()) {
                                 for (Monster monster : currentHall.getMonsters()) {
                                     if (monster instanceof ArcherMonster) {
@@ -199,11 +220,8 @@ public class PlayMode implements GameState {
                                 }
                                 System.out.println("PlayMode: Hero visibility restored");
                             }
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
                         }
                     }).start();
-                    System.out.println("PlayMode: Hero invisible for " + duration + " seconds");
                 }
             }
         });

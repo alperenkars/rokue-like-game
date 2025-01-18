@@ -253,7 +253,6 @@ public class Hall {
     }
 
     public void update(Hero hero) {
-        // Update monsters
         for (Monster monster : new ArrayList<>(monsters)) {
             if (monster instanceof WizardMonster) {
                 ((TeleportRune)monster.getBehaviour()).setHall(this);
