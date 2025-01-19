@@ -9,6 +9,8 @@ public class ChallengingWizardStrategy implements WizardStrategy {
     private long lastTeleportTime = 0;
     private static final long TELEPORT_INTERVAL = 3000; // 3 seconds in milliseconds
 
+
+    //spawn hero, not rune
     @Override
     public void executeStrategy(Hero hero, WizardMonster wizard) {
         long currentTime = System.currentTimeMillis();

@@ -70,7 +70,7 @@ public class PlayMode implements GameState {
     private final ReentrantLock updateLock = new ReentrantLock();
     private final ReentrantLock hallTransitionLock = new ReentrantLock();
     private final Object enchantmentLock = new Object();
-
+    private long currentTime = System.currentTimeMillis();
 
     /**
      * Creates a new PlayMode instance with the given halls, hero, and event manager.
@@ -101,13 +101,16 @@ public class PlayMode implements GameState {
 
     public void enter(GameSystem system) {
         System.out.println("Entering Play Mode");
-        this.gameTimer = new GameTimer(eventManager);
-        this.gameTimer.start(PlayMode.START_TIME);
+        gameTimer = new GameTimer(eventManager);
+        gameTimer.start(PlayMode.START_TIME);
 
-        Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
-        currentHall.setRune(rune);
-
+        spawnInitialRune();
         registerEventHandlers();
+    }
+    private void spawnInitialRune() {
+        Position runePos = new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight()));
+        Rune rune = new Rune(runePos);
+        currentHall.setRune(rune);
     }
 
     private void registerEventHandlers() {
