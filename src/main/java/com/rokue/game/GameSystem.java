@@ -12,12 +12,19 @@ import com.rokue.game.events.EventManager;
 import com.rokue.game.input.IInputProvider;
 import com.rokue.game.render.IRenderer;
 import com.rokue.game.states.BuildMode;
+import com.rokue.game.states.GameSaveData;
 import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
 import com.rokue.game.states.PlayMode;
 import com.rokue.ui.BuildModeUI;
 import com.rokue.ui.MainMenuUI;
 import com.rokue.ui.PlayModeUI;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class GameSystem {
     private GameState currentState;
@@ -122,4 +129,54 @@ public class GameSystem {
     public GameState getCurrentState() {
         return currentState;
     }
+
+    public void saveGame(String filePath) {
+    if (currentState instanceof PlayMode playMode) {
+        // Create a GameSaveData object
+        GameSaveData saveData = new GameSaveData(
+            playMode.getHero(),
+            playMode.getHalls(),
+            playMode.getCurrentHallIndex(),
+            (int) playMode.getRemainingTime()
+        );
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(saveData);
+            System.out.println("Game saved successfully to " + filePath);
+        } catch (IOException e) {
+            System.err.println("Error saving game: " + e.getMessage());
+        }
+    } else {
+        System.out.println("Cannot save game: Current state is not PlayMode.");
+    }
+}
+
+
+public void loadGame(String filePath) {
+    try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+        // Read the saved data
+        GameSaveData saveData = (GameSaveData) ois.readObject();
+
+        // Restore PlayMode from GameSaveData
+        PlayMode playMode = new PlayMode(
+            saveData.getHalls(),
+            saveData.getHero(),
+            eventManager
+        );
+        playMode.setCurrentHall(saveData.getHalls().get(saveData.getCurrentHallIndex()));
+        playMode.getGameTimer().start(saveData.getRemainingTime());
+
+        // Transition to restored PlayMode
+        PlayModeUI playModeUI = new PlayModeUI(playMode, gameWindow);
+        transitionTo(playMode, playModeUI);
+
+        System.out.println("Game loaded successfully from " + filePath);
+    } catch (IOException | ClassNotFoundException e) {
+        System.err.println("Error loading game: " + e.getMessage());
+    }
+}
+
+    
+
+
 }

@@ -1,5 +1,6 @@
 package com.rokue.game.entities;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,7 +17,9 @@ import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
-public class Hero {
+public class Hero implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final List<String> inventory; //for the enchantments
     private static final int MAX_INVENTORY_SIZE = 6;
     private volatile Position position;

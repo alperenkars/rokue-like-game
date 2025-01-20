@@ -668,4 +668,16 @@ public class PlayMode implements GameState {
             }
         }
     }
+
+    public Object getGameTimer() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getGameTimer'");
+    }
+
+    public void setCurrentHall(Hall hall) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setCurrentHall'");
+    }
+
+    
 }

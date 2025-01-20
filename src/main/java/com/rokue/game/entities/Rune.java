@@ -1,11 +1,13 @@
 package com.rokue.game.entities;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
 
 import com.rokue.game.util.Position;
 
-public class Rune {
+public class Rune implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     protected Position position;
     private Random rand = new Random();
