@@ -1,12 +1,13 @@
 package com.rokue.game.entities;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
+import com.rokue.game.behaviour.TeleportRune;
 import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
@@ -110,7 +111,7 @@ public class Hall {
             }
         }
 
-        // Add the object to the hall's object list
+        object.setPosition(gridPosition);
         objects.add(object);
         return true;
     }
@@ -119,17 +120,43 @@ public class Hall {
     // Remove a DungeonObject from the Hall
     public boolean removeObject(Position position) {
         if (!isWithinBounds(position)) {
-            return false; // Position is out of bounds
+            return false;
         }
 
-        Cell cell = getCell(position);
-        if (cell != null && cell.getContent() instanceof DungeonObject) {
-            DungeonObject object = (DungeonObject) cell.getContent();
+        DungeonObject object = getObjectAt(position);
+        if (object != null) {
+            Position objectPos = object.getPosition();
+            int startX = objectPos.getX();
+            int startY = objectPos.getY();
+            int width = object.getWidthInCells();
+            int height = object.getHeightInCells();
+
+            // First: Remove from objects list
             objects.remove(object);
-            cell.setContent(null);
+
+            // Second: Clear ALL cells that this object occupies (matching how we add objects)
+            for (int x = startX; x < startX + width; x++) {
+                for (int y = startY; y < startY + height; y++) {
+                    Cell cell = getCell(new Position(x, y));
+                    if (cell != null) {
+                        // Clear any reference to this object
+                        cell.setContent(null);
+                    }
+                }
+            }
+
+            // Finally: If there was a rune under this object, place it
+            if (rune != null && object.equals(rune.getHiddenUnder()) && !rune.isCollected()) {
+                Cell clickedCell = getCell(position);
+                if (clickedCell != null) {
+                    clickedCell.setContent(rune);
+                    rune.setPosition(position);
+                }
+            }
+            
             return true;
         }
-        return false; // No object to remove
+        return false;
     }
 
     // Get all objects in the Hall
@@ -148,10 +175,23 @@ public class Hall {
 
     // Get the object at a specific position
     public DungeonObject getObjectAt(Position position) {
-        if (isWithinBounds(position)) {
-            Object content = getCell(position).getContent();
-            if (content instanceof DungeonObject) {
-                return (DungeonObject) content;
+        if (!isWithinBounds(position)) {
+            return null;
+        }
+
+        // Check all objects to see if this position is within their bounds
+        for (DungeonObject obj : objects) {
+            Position objPos = obj.getPosition();
+            if (objPos != null) {
+                int startX = objPos.getX();
+                int startY = objPos.getY();
+                int endX = startX + obj.getWidthInCells();
+                int endY = startY + obj.getHeightInCells();
+
+                if (position.getX() >= startX && position.getX() < endX &&
+                    position.getY() >= startY && position.getY() < endY) {
+                    return obj;
+                }
             }
         }
         return null;
@@ -178,13 +218,22 @@ public class Hall {
 
     public void setRune(Rune rune) {
         if (this.rune != null) {
-            // Clear the old rune's cell
-            getCell(this.rune.getPosition()).setContent(null);
+            // Clear the old rune's cell if it was revealed
+            if (this.rune.isRevealed() && !this.rune.isCollected()) {
+                getCell(this.rune.getPosition()).setContent(null);
+            }
         }
         this.rune = rune;
         if (rune != null) {
-            Position runePosition = rune.getPosition();
-            getCell(runePosition).setContent(rune);
+            // Only set the cell content if the rune is revealed and not collected
+            if (rune.isRevealed() && !rune.isCollected()) {
+                Position runePosition = rune.getPosition();
+                getCell(runePosition).setContent(rune);
+            }
+            // Initialize rune by hiding it under a random object
+            if (rune.getHiddenUnder() == null && !objects.isEmpty()) {
+                rune.moveToRandomObject(this);
+            }
         }
     }
 
@@ -205,15 +254,22 @@ public class Hall {
 
     public void update(Hero hero) {
         for (Monster monster : new ArrayList<>(monsters)) {
+            if (monster instanceof WizardMonster && monster.getBehaviour() instanceof TeleportRune) {
+                ((TeleportRune)monster.getBehaviour()).setHall(this);
+            }
             monster.update(hero, this);
             if (monster instanceof FighterMonster fighterMonster) {
                 fighterMonster.move(this, luringGemPosition);
             }
         }
 
+        // Check if hero is on a revealed rune or enchantment
         Cell currentCell = getCell(hero.getPosition());
-        if (currentCell != null && currentCell.getContent() instanceof Rune) {
-            hero.interactWithRune(currentCell, this);
+        if (currentCell != null) {
+            Object content = currentCell.getContent();
+            if (content instanceof Rune || content instanceof Enchantment) {
+                hero.interactWithObject(currentCell, this);
+            }
         }
     }
 

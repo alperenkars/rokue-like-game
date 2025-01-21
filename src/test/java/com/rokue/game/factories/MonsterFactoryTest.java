@@ -1,33 +1,42 @@
-package test.java.com.rokue.game.factories;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.rokue.game.factories.MonsterFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.rokue.game.entities.Hall;
-import com.rokue.game.entities.monsters.ArcherMonster;
-import com.rokue.game.entities.monsters.FighterMonster;
-import com.rokue.game.entities.monsters.WizardMonster;
-import com.rokue.game.entities.monsters.Monster;
-import com.rokue.game.util.Position;
+package com.rokue.game.factories;
 
 import java.util.HashSet;
 import java.util.Set;
 
-class MonsterFactoryTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.rokue.game.entities.Hall;
+import com.rokue.game.entities.monsters.ArcherMonster;
+import com.rokue.game.entities.monsters.FighterMonster;
+import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.WizardMonster;
+import com.rokue.game.events.EventManager;
+import com.rokue.game.states.PlayMode;
+import com.rokue.game.util.Position;
+
+class MonsterFactoryTest {
     private Hall testHall;
+    private PlayMode mockPlayMode;
+    private EventManager mockEventManager;
 
     @BeforeEach
     void setUp() {
         testHall = new Hall("TestHall", 10, 10, 1);
+        mockEventManager = mock(EventManager.class);
+        mockPlayMode = mock(PlayMode.class);
+        when(mockPlayMode.getEventManager()).thenReturn(mockEventManager);
+        when(mockPlayMode.getRemainingTime()).thenReturn(30); // Mock remaining time
     }
 
     @Test
     void testMonsterHasValidAttributes() {
-        Monster monster = MonsterFactory.createRandomMonster(testHall);
+        Monster monster = MonsterFactory.createRandomMonster(testHall, mockPlayMode);
 
         assertNotNull(monster, "Created monster should not be null.");
         assertTrue(monster instanceof ArcherMonster || monster instanceof FighterMonster || monster instanceof WizardMonster,
@@ -39,7 +48,7 @@ class MonsterFactoryTest {
     @Test
     void testRandomPositionBoundaryValues() {
         for (int i = 0; i < 100; i++) {
-            Monster monster = MonsterFactory.createRandomMonster(testHall);
+            Monster monster = MonsterFactory.createRandomMonster(testHall, mockPlayMode);
             Position position = monster.getPosition();
 
             assertTrue(position.getX() >= 0 && position.getX() < testHall.getWidth(),
@@ -54,7 +63,7 @@ class MonsterFactoryTest {
         Set<Class<?>> monsterTypes = new HashSet<>();
 
         for (int i = 0; i < 100; i++) {
-            Monster monster = MonsterFactory.createRandomMonster(testHall);
+            Monster monster = MonsterFactory.createRandomMonster(testHall, mockPlayMode);
             monsterTypes.add(monster.getClass());
 
             if (monsterTypes.contains(ArcherMonster.class) &&
@@ -72,7 +81,7 @@ class MonsterFactoryTest {
     @Test
     void testNoSpawnCollision() {
         for (int i = 0; i < 10; i++) {
-            Monster monster = MonsterFactory.createRandomMonster(testHall);
+            Monster monster = MonsterFactory.createRandomMonster(testHall, mockPlayMode);
             Position position = monster.getPosition();
             assertNotNull(testHall.getCell(position), "Monster should spawn in a valid cell.");
             assertNull(testHall.getCell(position).getContent(), "Monster should not spawn in an occupied cell.");

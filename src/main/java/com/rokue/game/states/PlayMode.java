@@ -6,17 +6,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
-import com.rokue.game.events.EventListener;
 
 import com.rokue.game.GameSystem;
 import com.rokue.game.GameTimer;
 import com.rokue.game.actions.IAction;
 import com.rokue.game.actions.MoveAction;
+import com.rokue.game.behaviour.ShootArrow;
+import com.rokue.game.behaviour.StabDagger;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.entities.enchantments.Enchantment;
+import com.rokue.game.entities.monsters.ArcherMonster;
+import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.events.EventListener;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.factories.EnchantmentFactory;
 import com.rokue.game.factories.MonsterFactory;
@@ -55,18 +59,18 @@ public class PlayMode implements GameState {
     private EventManager eventManager;
     public static final int START_TIME = 60;
     public static final Position START_POSITION = new Position(0, 0);
-    private static final int MONSTER_SPAWN_INTERVAL = 480; // (60 FPS * 8)
-    private static final int ENCHANTMENT_SPAWN_INTERVAL = 720; // (60 FPS * 12)
-    private static final int ENCHANTMENT_DESPAWN_TIME = 360; //  (60 FPS * 6)
-    private int monsterSpawnCounter = 0;
-    private int enchantmentSpawnCounter = 0;
-    private Map<Enchantment, Integer> enchantmentTimers = new HashMap<>();
+    private static final long MONSTER_SPAWN_INTERVAL_MS = 8000; // 8 seconds
+    private static final long ENCHANTMENT_SPAWN_INTERVAL_MS = 12000; // 12 seconds
+    private static final long ENCHANTMENT_DESPAWN_TIME_MS = 6000; // 6 seconds
+    private long lastMonsterSpawnTime = 0;
+    private long lastEnchantmentSpawnTime = 0;
+    private Map<Enchantment, Long> enchantmentDespawnTimes = new HashMap<>();
     private Random rand = new Random();
     private volatile boolean paused = false;
     private final ReentrantLock updateLock = new ReentrantLock();
     private final ReentrantLock hallTransitionLock = new ReentrantLock();
     private final Object enchantmentLock = new Object();
-
+    private long currentTime = System.currentTimeMillis();
 
     /**
      * Creates a new PlayMode instance with the given halls, hero, and event manager.
@@ -97,13 +101,16 @@ public class PlayMode implements GameState {
 
     public void enter(GameSystem system) {
         System.out.println("Entering Play Mode");
-        this.gameTimer = new GameTimer(eventManager);
-        this.gameTimer.start(PlayMode.START_TIME);
+        gameTimer = new GameTimer(eventManager);
+        gameTimer.start(PlayMode.START_TIME);
 
-        Rune rune = new Rune(new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight())));
-        currentHall.setRune(rune);
-
+        spawnInitialRune();
         registerEventHandlers();
+    }
+    private void spawnInitialRune() {
+        Position runePos = new Position(rand.nextInt(currentHall.getWidth()), rand.nextInt(currentHall.getHeight()));
+        Rune rune = new Rune(runePos);
+        currentHall.setRune(rune);
     }
 
     private void registerEventHandlers() {
@@ -133,6 +140,160 @@ public class PlayMode implements GameState {
             }
         });
 
+        // Info message event
+        eventManager.subscribe("SHOW_INFO", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (data instanceof String) {
+                    System.out.println("PlayMode: " + data);
+                    eventManager.notify("DISPLAY_INFO", data);
+                }
+            }
+        });
+
+        // Add lives event
+        eventManager.subscribe("ADD_LIVES", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                synchronized (hero) {
+                    if (!isPaused()) {
+                        int currentLives = hero.getLives();
+                        currentLives++;
+                        System.out.println("PlayMode: Added 1 life. Lives: " + currentLives);
+                    }
+                }
+            }
+        });
+
+        // Add time event
+        eventManager.subscribe("ADD_TIME", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Integer) {
+                    int seconds = (Integer) data;
+                    gameTimer.addTime(seconds);
+                    System.out.println("PlayMode: Added " + seconds + " seconds to timer");
+                }
+            }
+        });
+
+        // Invisibility event
+        eventManager.subscribe("INVISIBILITY", new EventListener() {
+            private long invisibilityEndTime = 0;
+            private boolean isInvisible = false;
+
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Integer) {
+                    int duration = (Integer) data;
+                    // Set invisibility flag for archer monsters
+                    for (Monster monster : currentHall.getMonsters()) {
+                        if (monster instanceof ArcherMonster) {
+                            ((ShootArrow)monster.getBehaviour()).setHeroInvisible(true);
+                        }
+                    }
+                    
+                    isInvisible = true;
+                    invisibilityEndTime = System.currentTimeMillis() + (duration * 1000);
+                    System.out.println("PlayMode: Hero invisible for " + duration + " seconds");
+
+                    // Start a timer to check invisibility status periodically
+                    new Thread(() -> {
+                        while (isInvisible && System.currentTimeMillis() < invisibilityEndTime) {
+                            if (isPaused()) {
+                                // If game is paused, extend the end time by the pause duration
+                                invisibilityEndTime += 100; // Extend by the sleep duration
+                            }
+                            try {
+                                Thread.sleep(100); // Check every 100ms
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        }
+                        
+                        // Only remove invisibility if it hasn't been removed already
+                        if (isInvisible) {
+                            isInvisible = false;
+                            if (!isPaused()) {
+                                for (Monster monster : currentHall.getMonsters()) {
+                                    if (monster instanceof ArcherMonster) {
+                                        ((ShootArrow)monster.getBehaviour()).setHeroInvisible(false);
+                                    }
+                                }
+                                System.out.println("PlayMode: Hero visibility restored");
+                            }
+                        }
+                    }).start();
+                }
+            }
+        });
+
+        // Reveal rune event
+        eventManager.subscribe("REVEAL_RUNE", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Integer) {
+                    int duration = (Integer) data;
+                    Rune rune = currentHall.getRune();
+                    if (rune != null && rune.getHiddenUnder() != null) {
+                        Position runePos = rune.getHiddenUnder().getPosition();
+                        // Calculate the 4x4 region that will contain the rune
+                        // Ensure the region stays within hall bounds
+                        int startX = Math.max(0, runePos.getX() - 1);
+                        int startY = Math.max(0, runePos.getY() - 1);
+                        int endX = Math.min(currentHall.getWidth() - 1, startX + 3);
+                        int endY = Math.min(currentHall.getHeight() - 1, startY + 3);
+                        
+                        // Adjust start positions if region would exceed bounds
+                        if (endX - startX < 3) startX = Math.max(0, endX - 3);
+                        if (endY - startY < 3) startY = Math.max(0, endY - 3);
+
+                        Position highlightStart = new Position(startX, startY);
+                        Position highlightEnd = new Position(endX, endY);
+                        
+                        // Notify UI to show highlight
+                        Map<String, Position> highlightData = new HashMap<>();
+                        highlightData.put("start", highlightStart);
+                        highlightData.put("end", highlightEnd);
+                        eventManager.notify("SHOW_HIGHLIGHT", highlightData);
+                        
+                        // Schedule highlight removal
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(duration * 1000);
+                                if (!isPaused()) {
+                                    eventManager.notify("HIDE_HIGHLIGHT", null);
+                                    System.out.println("PlayMode: Rune highlight removed");
+                                }
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }).start();
+                        
+                        System.out.println("PlayMode: Highlighting region from " + highlightStart + " to " + highlightEnd);
+                    }
+                }
+            }
+        });
+
+        // Distraction event
+        eventManager.subscribe("DISTRACTION", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                if (!isPaused() && data instanceof Position) {
+                    Position targetPos = (Position) data;
+                    // Update fighter monsters' target position
+                    for (Monster monster : currentHall.getMonsters()) {
+                        if (monster instanceof FighterMonster) {
+                            ((StabDagger)monster.getBehaviour()).setTargetPosition(targetPos);
+                        }
+                    }
+                    System.out.println("PlayMode: Fighter monsters distracted to " + targetPos);
+                }
+            }
+        });
+
         // Rune collected event
         eventManager.subscribe("RUNE_COLLECTED", new EventListener() {
             @Override
@@ -152,10 +313,22 @@ public class PlayMode implements GameState {
                     if (!isPaused()) {
                         Rune rune = currentHall.getRune();
                         if (rune != null) {
-                            rune.moveRandomly(currentHall);
+                            rune.moveToRandomObject(currentHall);
                             currentHall.setRune(rune);
                             System.out.println("PlayMode: Rune teleported by wizard!");
                         }
+                    }
+                }
+            }
+        });
+
+        eventManager.subscribe("ADD_LIVES", new EventListener() {
+            @Override
+            public void onEvent(String eventType, Object data) {
+                synchronized (hero) {
+                    if (!isPaused()) {
+                        hero.increaseLife();
+                        System.out.println("PlayMode: Added 1 life. Lives: " + hero.getLives());
                     }
                 }
             }
@@ -202,37 +375,38 @@ public class PlayMode implements GameState {
             try {
                 currentHall.update(hero);
                 
-                monsterSpawnCounter++;
-                if (monsterSpawnCounter >= MONSTER_SPAWN_INTERVAL) {
-                    Monster monster = MonsterFactory.createRandomMonster(currentHall);
+                long currentTime = System.currentTimeMillis();
+                
+                // Monster spawning
+                if (currentTime - lastMonsterSpawnTime >= MONSTER_SPAWN_INTERVAL_MS) {
+                    Monster monster = MonsterFactory.createRandomMonster(currentHall, this);
                     synchronized(currentHall) {
                         currentHall.addMonster(monster);
                     }
-                    monsterSpawnCounter = 0;
+                    lastMonsterSpawnTime = currentTime;
                 }
 
-                enchantmentSpawnCounter++;
-                if (enchantmentSpawnCounter >= ENCHANTMENT_SPAWN_INTERVAL) {
+                // Enchantment spawning
+                if (currentTime - lastEnchantmentSpawnTime >= ENCHANTMENT_SPAWN_INTERVAL_MS) {
                     Enchantment enchantment = EnchantmentFactory.createRandomEnchantment(currentHall);
                     synchronized(enchantmentLock) {
                         currentHall.addEnchantment(enchantment);
-                        enchantmentTimers.put(enchantment, ENCHANTMENT_DESPAWN_TIME);
+                        enchantmentDespawnTimes.put(enchantment, currentTime + ENCHANTMENT_DESPAWN_TIME_MS);
                     }
-                    enchantmentSpawnCounter = 0;
+                    lastEnchantmentSpawnTime = currentTime;
                 }
 
+                // Enchantment despawning
                 synchronized(enchantmentLock) {
-                    Iterator<Map.Entry<Enchantment, Integer>> it = enchantmentTimers.entrySet().iterator();
+                    Iterator<Map.Entry<Enchantment, Long>> it = enchantmentDespawnTimes.entrySet().iterator();
                     while (it.hasNext()) {
-                        Map.Entry<Enchantment, Integer> entry = it.next();
+                        Map.Entry<Enchantment, Long> entry = it.next();
                         Enchantment enchantment = entry.getKey();
-                        int timeLeft = entry.getValue() - 1;
+                        long despawnTime = entry.getValue();
                         
-                        if (timeLeft <= 0) {
+                        if (currentTime >= despawnTime) {
                             currentHall.removeEnchantment(enchantment);
                             it.remove();
-                        } else {
-                            entry.setValue(timeLeft);
                         }
                     }
                 }
@@ -341,10 +515,10 @@ public class PlayMode implements GameState {
         hallTransitionLock.lock();
         try {
             // Reset all counters and collections
-            monsterSpawnCounter = 0;
-            enchantmentSpawnCounter = 0;
+            lastMonsterSpawnTime = System.currentTimeMillis();
+            lastEnchantmentSpawnTime = System.currentTimeMillis();
             synchronized(enchantmentLock) {
-                enchantmentTimers.clear();
+                enchantmentDespawnTimes.clear();
             }
 
             // Reset all halls
@@ -383,10 +557,10 @@ public class PlayMode implements GameState {
     private void resetState() {
         updateLock.lock();
         try {
-            monsterSpawnCounter = 0;
-            enchantmentSpawnCounter = 0;
+            lastMonsterSpawnTime = System.currentTimeMillis();
+            lastEnchantmentSpawnTime = System.currentTimeMillis();
             synchronized(enchantmentLock) {
-                enchantmentTimers.clear();
+                enchantmentDespawnTimes.clear();
             }
             synchronized(currentHall) {
                 currentHall.clearMonsters();
@@ -419,15 +593,12 @@ public class PlayMode implements GameState {
     private void onRuneCollected() {
         hallTransitionLock.lock();
         try {
-            Rune rune1 = currentHall.getRune();
-            if (rune1 != null && !rune1.isCollected()) {
-                rune1.collect(hero);
-                currentHall.setRune(null);
-                System.out.println("Rune collected and added to inventory!");
-            }
+            System.out.println("Rune collected!");
 
+            // Clear any existing highlight
+            eventManager.notify("HIDE_HIGHLIGHT", null);
 
-                int nextHallIndex = halls.indexOf(currentHall) + 1;
+            int nextHallIndex = halls.indexOf(currentHall) + 1;
             if (nextHallIndex < halls.size()) {
                 resetState(); // Reset state before changing hall
                 
@@ -482,8 +653,11 @@ public class PlayMode implements GameState {
     }
 
     public int getRemainingTime() {
-        GameTimer timer = gameTimer; // Local reference for thread safety
-        return timer != null ? timer.getRemainingTime() : 0;
+        return gameTimer != null ? gameTimer.getRemainingTime() : 0;
+    }
+
+    public EventManager getEventManager() {
+        return eventManager;
     }
 
     public void handleActions(List<IAction> actions) {

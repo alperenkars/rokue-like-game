@@ -1,5 +1,11 @@
 package com.rokue.game;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.events.EventManager;
@@ -12,12 +18,6 @@ import com.rokue.game.states.PlayMode;
 import com.rokue.ui.BuildModeUI;
 import com.rokue.ui.MainMenuUI;
 import com.rokue.ui.PlayModeUI;
-
-
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 public class GameSystem {
     private GameState currentState;

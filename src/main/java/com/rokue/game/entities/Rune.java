@@ -1,5 +1,6 @@
 package com.rokue.game.entities;
 
+import java.util.List;
 import java.util.Random;
 
 import com.rokue.game.util.Position;
@@ -9,9 +10,12 @@ public class Rune {
     protected Position position;
     private Random rand = new Random();
     private boolean collected = false;
+    private boolean revealed = false;
+    private DungeonObject hiddenUnder;
 
     public Rune(Position position) {
         this.position = position;
+        this.revealed = false;
     }
 
     public Position getPosition() {
@@ -30,34 +34,33 @@ public class Rune {
         return collected;
     }
 
-    public void collect(Hero hero) {
-        hero.addToInventory(this); // rune added to inventory
-        this.setCollected(true);
-        System.out.println("Rune at position " +position+ " collected and added to inventory!");
+    public boolean isRevealed() {
+        return revealed;
     }
 
-    public void moveRandomly(Hall hall) {
-        int attempts = 0;
-        final int MAX_ATTEMPTS = 100; // Prevent infinite loop
-        
-        while (attempts < MAX_ATTEMPTS) {
-            Position newPos = new Position(rand.nextInt(hall.getWidth()), rand.nextInt(hall.getHeight()));
-            if (hall.getCell(newPos).getContent() == null && !newPos.equals(hall.getHero().getPosition())) {
-                this.position = newPos;
-                return;
-            }
-            attempts++;
+    public void setRevealed(boolean revealed) {
+        this.revealed = revealed;
+    }
+
+    public DungeonObject getHiddenUnder() {
+        return hiddenUnder;
+    }
+
+    public void setHiddenUnder(DungeonObject object) {
+        this.hiddenUnder = object;
+        if (object != null) {
+            this.position = object.getPosition();
+            this.revealed = false;
+        }
+    }
+
+    public void moveToRandomObject(Hall hall) {
+        List<DungeonObject> objects = hall.getObjects();
+        if (objects.isEmpty()) {
+            return;
         }
         
-        // If we couldn't find a valid position after max attempts, try one last time with more distance from hero
-        Position heroPos = hall.getHero().getPosition();
-        while (true) {
-            Position newPos = new Position(rand.nextInt(hall.getWidth()), rand.nextInt(hall.getHeight()));
-            if (hall.getCell(newPos).getContent() == null && 
-                newPos.distance(heroPos) > 2.0) { 
-                this.position = newPos;
-                return;
-            }
-        }
+        DungeonObject randomObject = objects.get(rand.nextInt(objects.size()));
+        setHiddenUnder(randomObject);
     }
 }

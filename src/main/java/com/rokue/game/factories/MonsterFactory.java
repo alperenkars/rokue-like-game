@@ -7,12 +7,13 @@ import com.rokue.game.entities.monsters.ArcherMonster;
 import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
 import com.rokue.game.entities.monsters.WizardMonster;
+import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Position;
 
 public class MonsterFactory {
     private static Random rand = new Random();
 
-    public static Monster createRandomMonster(Hall hall) {
+    public static Monster createRandomMonster(Hall hall, PlayMode playMode) {
         boolean wizardExists = hall.getMonsters().stream()
                 .anyMatch(monster -> monster instanceof WizardMonster);
 
@@ -28,7 +29,12 @@ public class MonsterFactory {
                         return new FighterMonster(spawnPos);
                     case 2:
                         if (!wizardExists) {
-                            return new WizardMonster(spawnPos);
+                            return new WizardMonster(spawnPos, 
+                                                   playMode.getEventManager(), 
+                                                   hall, 
+                                                   PlayMode.START_TIME, 
+                                                   playMode.getRemainingTime(),
+                                                   playMode);
                         }
                         return new FighterMonster(spawnPos);
                 }

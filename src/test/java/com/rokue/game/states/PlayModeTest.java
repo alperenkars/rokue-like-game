@@ -1,24 +1,22 @@
 package com.rokue.game.states;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import static org.mockito.Mockito.mock;
 
 import com.rokue.game.GameSystem;
-import com.rokue.game.GameTimer;
 import com.rokue.game.entities.Hall;
 import com.rokue.game.entities.Hero;
 import com.rokue.game.entities.Rune;
 import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Position;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.*;
 
 class PlayModeTest {
     private PlayMode playMode;
@@ -106,14 +104,16 @@ class PlayModeTest {
     
     @Test
     void testRuneCollection() {
+        // Create a rune and set it as revealed
         Rune rune = new Rune(new Position(5, 5));
+        rune.setRevealed(true);  // Rune must be revealed before it can be collected
         firstHall.setRune(rune);
         
+        // Move hero to rune position and update
         hero.setPosition(new Position(5, 5));
         playMode.update(mock(GameSystem.class));
         
         assertTrue(firstHall.getRune().isCollected(), "Rune should be marked as collected");
-        
         assertTrue(repOk(), "Rep invariant should hold after rune collection");
     }
 } 

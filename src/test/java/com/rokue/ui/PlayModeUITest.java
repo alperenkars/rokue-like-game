@@ -1,16 +1,20 @@
 package com.rokue.ui;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.awt.event.MouseEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
 
 import javax.swing.JFrame;
 
-import com.rokue.game.states.PlayMode;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.rokue.game.states.PlayMode;
 
 public class PlayModeUITest {
     private PlayModeUI playModeUI;
@@ -21,6 +25,10 @@ public class PlayModeUITest {
     public void setUp() {
         playMode = mock(PlayMode.class);
         gameWindow = mock(JFrame.class);
+        
+        // Mock EventManager
+        com.rokue.game.events.EventManager eventManager = mock(com.rokue.game.events.EventManager.class);
+        when(playMode.getEventManager()).thenReturn(eventManager);
         
         when(gameWindow.getKeyListeners()).thenReturn(new KeyListener[0]);
         
@@ -47,13 +55,13 @@ public class PlayModeUITest {
         int buttonX = playModeUI.getWidth() - 40 - 20;
         int buttonY = 20;
 
-        MouseEvent clickEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
-        playModeUI.mouseClicked(clickEvent);
+        MouseEvent pressEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
+        playModeUI.mousePressed(pressEvent);
 
         verify(playMode).pause();
         assertTrue(playModeUI.isPaused());
 
-        playModeUI.mouseClicked(clickEvent);
+        playModeUI.mousePressed(pressEvent);
 
         verify(playMode).resume();
         assertFalse(playModeUI.isPaused());
@@ -79,10 +87,10 @@ public class PlayModeUITest {
         int buttonX = playModeUI.getWidth() - 40 - 20;
         int buttonY = 20;
 
-        MouseEvent clickEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
-        playModeUI.mouseClicked(clickEvent);
-        playModeUI.mouseClicked(clickEvent);
-        playModeUI.mouseClicked(clickEvent);
+        MouseEvent pressEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
+        playModeUI.mousePressed(pressEvent);
+        playModeUI.mousePressed(pressEvent);
+        playModeUI.mousePressed(pressEvent);
 
         verify(playMode, times(2)).pause();
         verify(playMode, times(1)).resume();
@@ -107,18 +115,18 @@ public class PlayModeUITest {
         int buttonX = playModeUI.getWidth() - 40 - 20;
         int buttonY = 20;
 
-        MouseEvent clickEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_CLICKED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
-        playModeUI.mouseClicked(clickEvent);
+        MouseEvent pressEvent = new MouseEvent(playModeUI, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0, buttonX + 1, buttonY + 1, 1, false);
+        playModeUI.mousePressed(pressEvent);
 
         verify(playMode).pause();
         assertTrue(playModeUI.isPaused());
 
-        playModeUI.mouseClicked(clickEvent);
+        playModeUI.mousePressed(pressEvent);
 
         verify(playMode).resume();
         assertFalse(playModeUI.isPaused());
 
-        playModeUI.mouseClicked(clickEvent);
+        playModeUI.mousePressed(pressEvent);
 
         verify(playMode, times(2)).pause();
         assertTrue(playModeUI.isPaused());
