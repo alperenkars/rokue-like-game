@@ -93,6 +93,86 @@ public class BuildMode implements GameState {
         return true;
     }
 
+    /**
+     * Returns the size of an object based on its name.
+     *
+     * Requires:
+     * - `name` must be a valid string representing the object name.
+     *
+     * Effects:
+     * - Returns an array where the first element is the width in cells
+     *   and the second element is the height in cells.
+     */
+    private int[] getObjectSize(String name) {
+        switch (name.toLowerCase()) {
+            case "pillar":
+            case "torch":
+            case "crate":
+                return new int[]{1, 2}; // 1 cell wide, 2 cells tall
+            default:
+                return new int[]{1, 1}; // Default size: 1x1
+        }
+    }
+
+    public void randomlyFillCurrentHall() {
+        Hall hall = getCurrentHall();
+
+        // Clear current objects
+        hall.clearObjects();
+
+        int minObjects = hall.getMinObjectRequirement();
+        List<String> objectNames = List.of("pillar", "hole", "box", "crate", "torch", "skull", "chest", "potion");
+
+        int attempts = 0; // To prevent infinite loops
+        for (int i = 0; i < minObjects; ) {
+            String name = objectNames.get((int) (Math.random() * objectNames.size()));
+            int[] size = getObjectSize(name);
+
+            Position position = null;
+            boolean validPosition = false;
+
+            while (!validPosition && attempts < 10000) {
+                attempts++;
+                int x = (int) (Math.random() * hall.getWidth());
+                int y = (int) (Math.random() * hall.getHeight());
+                position = new Position(x, y);
+
+                // Create a temporary object for placement check
+                DungeonObject tempObject = new DungeonObject(name, "src/main/resources/assets/" + name + ".png", size[0], size[1]);
+                validPosition = hall.canPlaceObject(tempObject, position);
+            }
+
+            if (validPosition) {
+                DungeonObject object = new DungeonObject(name, "src/main/resources/assets/" + name + ".png", size[0], size[1]);
+                hall.addObject(object, position);
+                i++; // Increment only when an object is successfully added
+            } else {
+                System.out.println("Could not place object after several attempts.");
+                break;
+            }
+        }
+
+        System.out.println("Randomly filled " + hall.getName() + " with " + hall.getObjects().size() + " objects.");
+    }
+
+
+    /**
+     * Clears all objects from the current hall.
+     *
+     * Requires:
+     * - The current hall must be initialized.
+     *
+     * Modifies:
+     * - Removes all objects from the current hall.
+     *
+     * Effects:
+     * - Leaves the current hall with no objects.
+     */
+    public void clearCurrentHallObjects() {
+        Hall hall = getCurrentHall();
+        hall.clearObjects();
+    }
+
 
     /**
      * Checks if all halls meet their minimum object requirements.

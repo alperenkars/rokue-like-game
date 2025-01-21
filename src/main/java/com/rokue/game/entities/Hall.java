@@ -273,6 +273,65 @@ public class Hall {
         }
     }
 
+    /**
+     * Checks if a DungeonObject can be placed at the specified position.
+     *
+     * Requires:
+     * - `position` is within the bounds of the hall.
+     * - `object` is a valid DungeonObject with defined width and height.
+     *
+     * Modifies:
+     * - Does not modify any fields or objects.
+     *
+     * Effects:
+     * - Returns `true` if the object can be placed at the specified position without overlap or exceeding bounds.
+     * - Returns `false` if the placement would overlap existing objects or exceed hall boundaries.
+     */
+    public boolean canPlaceObject(DungeonObject object, Position position) {
+        int startX = position.getX();
+        int startY = position.getY();
+        int objectWidth = object.getWidthInCells();
+        int objectHeight = object.getHeightInCells();
+
+        // Check if the object fits within the hall boundaries
+        if (startX + objectWidth > this.width || startY + objectHeight > this.height) {
+            return false; // Object doesn't fit
+        }
+
+        // Check for collisions with existing objects
+        for (int x = startX; x < startX + objectWidth; x++) {
+            for (int y = startY; y < startY + objectHeight; y++) {
+                Cell cell = getCell(new Position(x, y));
+                if (cell == null || !cell.isEmpty()) {
+                    return false; // Collision detected
+                }
+            }
+        }
+
+        return true; // Valid placement
+    }
+
+    /**
+     * Clears all objects in the hall.
+     *
+     * Requires:
+     * - The grid and objects list must be initialized.
+     *
+     * Modifies:
+     * - Empties the list of objects and resets the grid content.
+     *
+     * Effects:
+     * - Leaves the hall with no objects.
+     */
+    public void clearObjects() {
+        objects.clear();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                grid[x][y].setContent(null); // Reset each cell's content
+            }
+        }
+    }
+
     public int getWidth() {
         return width;
     }

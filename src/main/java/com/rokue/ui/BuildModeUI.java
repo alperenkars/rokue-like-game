@@ -77,6 +77,23 @@ public class BuildModeUI extends ImagePanel implements IRenderer {
         bannerPanel.setBounds(hallX + hallWidth + 20, hallY, bannerWidth, bannerHeight);
         add(bannerPanel);
 
+        // Add Fill Button
+        JButton fillButton = createImageButton("src/main/resources/assets/fill_button.png", e -> {
+            buildMode.randomlyFillCurrentHall();
+            updateProgressBar();
+        });
+        fillButton.setBounds(hallX + hallWidth + 20, hallY + bannerHeight + 20, 190, 50);
+        add(fillButton);
+
+        // Add Clear Button
+        JButton clearButton = createImageButton("src/main/resources/assets/clear_button.png", e -> {
+            buildMode.clearCurrentHallObjects();
+            updateProgressBar();
+        });
+        clearButton.setBounds(hallX + hallWidth + 20, hallY + bannerHeight + 80, 190, 50);
+        add(clearButton);
+
+
         // Add Navigation Buttons
         JButton leftButton = createImageButton("src/main/resources/assets/left_arrow.png", e -> {
             startFadeAnimation(() -> {
@@ -98,7 +115,6 @@ public class BuildModeUI extends ImagePanel implements IRenderer {
         add(rightButton);
 
         // Add Play Button
-        
         JButton playButton = createImageButton("src/main/resources/assets/playbutton.png", e -> switchToPlayMode());
         playButton.setBounds(hallX + hallWidth / 2 - 85, hallY + hallHeight + 10, 190, 90);
         add(playButton);
