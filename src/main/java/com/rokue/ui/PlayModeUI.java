@@ -11,14 +11,32 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.awt.Image;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import com.rokue.ui.components.ImagePanel;
 
 import javax.imageio.ImageIO;
+import javax.sound.sampled.*;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import java.awt.BorderLayout;
+import java.awt.Cursor;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.net.URL;
+import java.awt.AlphaComposite;
+import javax.swing.Timer;
 
 import com.rokue.game.entities.DungeonObject;
 import com.rokue.game.entities.Hall;
@@ -40,9 +58,10 @@ import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
-public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
+public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private PlayMode playMode;
     private JFrame gameWindow;
+    private Clip backgroundClip; // To manage the background music
 
     // Hall rendering constants (matching BuildModeUI)
     private final int hallX = 20;
@@ -59,6 +78,7 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private final int BUTTON_SIZE = 40;
     private final int BUTTON_MARGIN = 20;
 
+
     // UI Panel constants
     private final int uiPanelWidth = 200;
     private final int uiPanelHeight = 400;
@@ -73,6 +93,7 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private BufferedImage playerImage;
     private BufferedImage runeImage;
     private BufferedImage inventoryBgImage;
+    private Image wallTexture; // Load your wall texture image
 
     // Monster images
     private BufferedImage archerImage;
@@ -85,20 +106,38 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
     private BufferedImage cloakImage;
     private BufferedImage luringGemImage;
     private BufferedImage extraLifeImage;
+    private BufferedImage heartImage;
+    private BufferedImage remainingTimeImage;
 
     private Position highlightStart = null;
     private Position highlightEnd = null;
     private final Color HIGHLIGHT_COLOR = new Color(255, 255, 0, 50); // Semi-transparent yellow
+    private final int wallThickness = 10; // Define wall thickness
+
+    private boolean isTransitioning = false;
+    private float opacity = 1.0f;
+    private Timer transitionTimer;  
+    
 
     private boolean waitingForLuringDirection = false;
 
+
+    
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
+        super("src/main/resources/assets/background.png");
         this.playMode = playMode;
         this.gameWindow = gameWindow;
         this.setPreferredSize(new Dimension(900, 800));
         this.setBackground(BACKGROUND_COLOR);
         addMouseListener(this);
         loadImages();
+
+        try {
+            wallTexture = ImageIO.read(getClass().getResource("/assets/surround_brick.png"));
+        } catch (IOException e) {
+            System.err.println("Error loading wall texture.");
+            e.printStackTrace();
+        }
 
         // Subscribe to highlight events
         playMode.getEventManager().subscribe("SHOW_HIGHLIGHT", (eventType, data) -> {
@@ -111,11 +150,17 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
             }
         });
 
+        // Inside the PlayModeUI constructor or an initialization method
+        playMode.getEventManager().subscribe("SHOW_CONGRATS_SCREEN", (eventType, data) -> {
+            showImprovedCongratulationsScreen();
+});
+
         playMode.getEventManager().subscribe("HIDE_HIGHLIGHT", (eventType, data) -> {
             highlightStart = null;
             highlightEnd = null;
             repaint();
         });
+        
 
         // Add key listener for enchantment shortcuts
         this.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -176,7 +221,10 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
                     }
                 }
             }
-        });
+            
+        }
+        
+        );
         
         // Make panel focusable to receive keyboard events
         this.setFocusable(true);
@@ -383,6 +431,7 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         Hall hall = playMode.getCurrentHall();
+        drawSurroundingWalls(g2d);
         drawHall(g2d, hall);
         drawUI(g2d, playMode.getHero());
 
@@ -392,28 +441,131 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         g2d.drawImage(currentImage, x, y, BUTTON_SIZE, BUTTON_SIZE, null);
     }
 
+    private void drawSurroundingWalls(Graphics2D g) {
+        if (wallTexture == null) {
+            // Fallback: Draw colored walls if texture isn't available
+            g.setColor(new Color(139, 69, 19)); // Brown color for walls
+        }
+    
+        // **Top Wall**
+        if (wallTexture != null) {
+            for (int x = hallX - wallThickness; x < hallX + hallWidth + wallThickness; x += wallThickness) {
+                g.drawImage(wallTexture, x, hallY - wallThickness, wallThickness, wallThickness, this);
+            }
+        } else {
+            g.fillRect(hallX - wallThickness, hallY - wallThickness,
+                      hallWidth + (2 * wallThickness), wallThickness);
+        }
+    
+        // **Bottom Wall**
+        if (wallTexture != null) {
+            for (int x = hallX - wallThickness; x < hallX + hallWidth + wallThickness; x += wallThickness) {
+                g.drawImage(wallTexture, x, hallY + hallHeight, wallThickness, wallThickness, this);
+            }
+        } else {
+            g.fillRect(hallX - wallThickness, hallY + hallHeight,
+                      hallWidth + (2 * wallThickness), wallThickness);
+        }
+    
+        // **Left Wall**
+        if (wallTexture != null) {
+            for (int y = hallY; y < hallY + hallHeight; y += wallThickness) {
+                g.drawImage(wallTexture, hallX - wallThickness, y, wallThickness, wallThickness, this);
+            }
+        } else {
+            g.fillRect(hallX - wallThickness, hallY,
+                      wallThickness, hallHeight);
+        }
+    
+        // **Right Wall**
+        if (wallTexture != null) {
+            for (int y = hallY; y < hallY + hallHeight; y += wallThickness) {
+                g.drawImage(wallTexture, hallX + hallWidth, y, wallThickness, wallThickness, this);
+            }
+        } else {
+            g.fillRect(hallX + hallWidth, hallY,
+                      wallThickness, hallHeight);
+        }
+    }
+    
+ 
+
     private void drawUI(Graphics2D g, Hero hero) {
         // Draw UI background
         g.setColor(new Color(43, 27, 44));
         g.fillRect(hallX + hallWidth + 20, 100, uiPanelWidth, uiPanelHeight);
 
-        // Draw time
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 16));
-        g.drawString("Time: " + playMode.getRemainingTime() + " seconds", 
-                    hallX + hallWidth + 30, 130);
-
-        // Draw lives
-        int heartSize = 20;
+        drawTime(g);
+                // Draw lives using heart icon
+        int heartSize = 40;
         int heartX = hallX + hallWidth + 30;
         int heartY = 150;
         for (int i = 0; i < hero.getLives(); i++) {
-            g.setColor(Color.RED);
-            g.fillOval(heartX + (i * (heartSize + 5)), heartY, heartSize, heartSize);
+            if (heartImage != null) {
+                g.drawImage(heartImage, 
+                            heartX + (i * (heartSize + 5)), 
+                            heartY, 
+                            heartSize, 
+                            heartSize, 
+                            this);
+            } else {
+                // Fallback: Draw filled oval if heart image is not loaded
+                g.setColor(Color.RED);
+                g.fillOval(heartX + (i * (heartSize + 5)), heartY, heartSize, heartSize);
+            }
         }
 
         // Draw inventory
         drawInventory(g, hero);
+    }
+
+    private void drawTime(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+    
+        // Text and icon configuration
+        String timeText = "Time: " + playMode.getRemainingTime() + " seconds";
+        int iconSize = 50;
+        int padding = -10;
+    
+        // Positioning
+        int timeX = hallX + hallWidth + 30;
+        int timeY = 130;
+    
+        // Load remaining time icon
+        BufferedImage clockIcon = remainingTimeImage;
+    
+        // Custom Font
+        Font timeFont = new Font("Verdana", Font.BOLD, 14);
+        g2d.setFont(timeFont);
+        FontMetrics fm = g2d.getFontMetrics();
+    
+        // Calculate text dimensions
+        int textWidth = fm.stringWidth(timeText);
+        int textHeight = fm.getHeight();
+    
+        // Background Rectangle dimensions
+    /*     int bgWidth = iconSize + padding + textWidth + padding;
+        int bgHeight = Math.max(iconSize, textHeight) + 60;
+    
+        // Draw semi-transparent background rectangle
+        g2d.setColor(new Color(0, 0, 0, 150)); // Semi-transparent black
+        g2d.fillRoundRect(timeX - 5, timeY - textHeight + 10, bgWidth, bgHeight, 15, 15);*/
+    
+        // Draw remaining time icon
+        if (clockIcon != null) {
+            int adjustedY = (timeY - iconSize + 5) + 15;
+            g2d.drawImage(clockIcon, timeX, adjustedY, iconSize, iconSize, this);
+        } else {
+            System.err.println("Remaining time icon not loaded.");
+        }
+    
+        // Text Shadow
+        g2d.setColor(new Color(0, 0, 0, 180)); // Semi-transparent black for shadow
+        g2d.drawString(timeText, timeX + iconSize + padding + 1, timeY + 1);
+    
+        // Main Text
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(timeText, timeX + iconSize + padding, timeY);
     }
 
     private void drawInventory(Graphics2D g, Hero hero) {
@@ -493,14 +645,16 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
             pauseImage = ImageIO.read(getClass().getResource("/assets/pausebutton.png"));
             resumeImage = ImageIO.read(getClass().getResource("/assets/resumebutton.png"));
             inventoryBgImage = ImageIO.read(getClass().getResource("/assets/Inventory.png"));
-
+    
             // Load enchantment images
-            cloakImage = ImageIO.read(getClass().getResource("/assets/cloak.png"));
-            revealImage = ImageIO.read(getClass().getResource("/assets/reveal.png"));
-            luringGemImage = ImageIO.read(getClass().getResource("/assets/lure.png"));
-            extraLifeImage = ImageIO.read(getClass().getResource("/assets/extra_life.png"));
-            extraTimeImage = ImageIO.read(getClass().getResource("/assets/clock.png"));
-
+            cloakImage = ImageIO.read(getClass().getClassLoader().getResource("assets/cloak.png"));
+            revealImage = ImageIO.read(getClass().getClassLoader().getResource("assets/reveal.png"));
+            luringGemImage = ImageIO.read(getClass().getClassLoader().getResource("assets/lure.png"));
+            extraLifeImage = ImageIO.read(getClass().getClassLoader().getResource("assets/extra_life.png"));
+            extraTimeImage = ImageIO.read(getClass().getClassLoader().getResource("assets/clock.png"));
+            heartImage = ImageIO.read(getClass().getClassLoader().getResource("assets/heart.png")); // Load heart image
+            remainingTimeImage = ImageIO.read(getClass().getClassLoader().getResource("assets/rclock.png")); // Load heart image
+    
             // Make the panel focusable to receive keyboard events
             setFocusable(true);
             
@@ -556,4 +710,192 @@ public class PlayModeUI extends JPanel implements IRenderer, MouseListener {
         this.infoMessageTime = System.currentTimeMillis();
         repaint();
     }
+
+
+      /**
+     * A custom JPanel that supports fading by adjusting its alpha transparency.
+     */
+    private class FadingPanel extends JPanel {
+        private float alpha = 0f;
+
+        /**
+         * Sets the alpha value for transparency.
+         *
+         * @param value The new alpha value (0.0f - 1.0f).
+         */
+        public void setAlpha(float value) {
+            alpha = Math.min(1f, Math.max(0f, value));
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            // Set the alpha composite for transparency
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            super.paintComponent(g2d);
+            g2d.dispose();
+        }
+    }
+    
+ /**
+     * Displays the improved Congratulations screen with enhanced visuals and a fade-in effect.
+     */
+    private void showImprovedCongratulationsScreen() {
+        SwingUtilities.invokeLater(() -> {
+            // Create a new JFrame for the end-game screen
+            JFrame endFrame = new JFrame("Game Complete");
+            endFrame.setSize(800, 600);
+            endFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            endFrame.setResizable(false);
+
+            // Create a panel with a background image
+            JPanel panel = new JPanel() {
+                BufferedImage bgImage;
+
+                {
+                    try {
+                        // Replace "/assets/final_bg.png" with the actual path to your background image in the resources
+                        bgImage = ImageIO.read(getClass().getResource("/assets/final_bg.png"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    if (bgImage != null) {
+                        g.drawImage(bgImage, 0, 0, getWidth(), getHeight(), this);
+                    }
+                }
+            };
+            panel.setLayout(new BorderLayout());
+
+            // Create a FadingPanel for the overlay content
+            FadingPanel overlayPanel = new FadingPanel();
+            overlayPanel.setOpaque(false);
+            overlayPanel.setLayout(new BorderLayout());
+
+             // Congratulations Label at the Top
+             JLabel congratsLabel = new JLabel("🎉 Congratulations! You Completed the Game! 🎉", SwingConstants.CENTER);
+             congratsLabel.setFont(new Font("SansSerif", Font.BOLD, 32));
+             congratsLabel.setForeground(Color.BLACK); // Black text for visibility against white background
+             congratsLabel.setBorder(BorderFactory.createEmptyBorder(50, 10, 10, 10)); // Top padding
+             overlayPanel.add(congratsLabel, BorderLayout.NORTH);
+ 
+             // Button Panel at the Bottom
+             JPanel buttonPanel = new JPanel();
+             buttonPanel.setOpaque(false);
+             buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 50)); // Centered with padding
+ 
+             JButton backButton = new JButton("Go Back to Main Screen");
+             styleButton(backButton);
+ 
+             backButton.addActionListener(new ActionListener() {
+                 @Override
+                 public void actionPerformed(ActionEvent e) {
+                     // Stop the background music
+                     stopBackgroundMusic();
+
+                     // Close the end-game frame
+                     endFrame.dispose();
+ 
+                     // Notify GameSystem to show the main menu
+                     playMode.getEventManager().notify("SHOW_MAIN_MENU", null);
+                 }
+             });
+ 
+             buttonPanel.add(backButton);
+             overlayPanel.add(buttonPanel, BorderLayout.SOUTH);
+ 
+             // Add the overlay panel to the main panel
+             panel.add(overlayPanel, BorderLayout.CENTER);
+ 
+             endFrame.add(panel);
+             endFrame.setLocationRelativeTo(null);
+             endFrame.setVisible(true);
+ 
+             // Start the fade-in effect using a Swing Timer
+             Timer timer = new Timer(50, null); // 50ms delay
+             timer.addActionListener(new ActionListener() {
+                 float alpha = 0f;
+
+                 @Override
+                 public void actionPerformed(ActionEvent e) {
+                     alpha += 0.05f; // Increment alpha
+                     if (alpha >= 1f) {
+                         alpha = 1f;
+                         timer.stop();
+                     }
+                     overlayPanel.setAlpha(alpha);
+                 }
+             });
+             timer.start();
+
+             // Start playing background music
+             playBackgroundMusic("/assets/end_music.wav");
+         });
+     }
+ 
+
+    /**
+     * Loads and plays the background music in a loop.
+     *
+     * @param audioPath The path to the audio file in the resources.
+     */
+    private void playBackgroundMusic(String audioPath) {
+        try {
+            // Obtain the audio input stream from the resource
+            URL soundURL = getClass().getResource(audioPath);
+            if (soundURL == null) {
+                System.err.println("Audio file not found: " + audioPath);
+                return;
+            }
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundURL);
+            backgroundClip = AudioSystem.getClip();
+            backgroundClip.open(audioIn);
+            backgroundClip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Stops and closes the background music clip.
+     */
+    private void stopBackgroundMusic() {
+        if (backgroundClip != null && backgroundClip.isRunning()) {
+            backgroundClip.stop();
+            backgroundClip.close();
+        }
+    }
+
+      /**
+     * Styles the JButton to have a black background, white text, rounded corners, and hover effects.
+     *
+     * @param button The JButton to style.
+     */
+    private void styleButton(JButton button) {
+        button.setFont(new Font("SansSerif", Font.BOLD, 18));
+        button.setForeground(Color.BLACK); // Changed to Black text
+        button.setBackground(Color.LIGHT_GRAY); // Changed background to Light Gray for contrast
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2, true));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Add hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(Color.GRAY);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(Color.LIGHT_GRAY);
+            }
+        });
+    }
+
+ 
+
 }
