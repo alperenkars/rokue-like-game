@@ -50,9 +50,26 @@ public class GameSystem {
         });
 
         eventManager.subscribe("GAME_COMPLETED", (eventType, data) -> {
+            if (currentState != null) {
+                currentState.exit(this);
+                currentState = null;
+            }
+            eventManager.notify("SHOW_CONGRATS_SCREEN", null);
+            
+        });
+
+        eventManager.subscribe("SHOW_MAIN_MENU", (eventType, data) -> {
             MainMenu mainMenu = new MainMenu(eventManager);
             MainMenuUI mainMenuUI = new MainMenuUI(mainMenu);
             transitionTo(mainMenu, mainMenuUI);
+        });
+
+        eventManager.subscribe("EXIT_PLAY_MODE", (eventType, data) -> {
+            if (currentState != null) {
+                currentState.exit(this);
+                currentState = null;
+            }
+            // Additional cleanup if necessary
         });
 
         eventManager.subscribe("TIME_EXPIRED", (eventType, data) -> {
@@ -65,6 +82,8 @@ public class GameSystem {
             MainMenu mainMenu = new MainMenu(eventManager);
             MainMenuUI mainMenuUI = new MainMenuUI(mainMenu);
             transitionTo(mainMenu, mainMenuUI);
+            
+            
         });
     }
 

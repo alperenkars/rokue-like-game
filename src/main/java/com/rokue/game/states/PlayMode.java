@@ -7,6 +7,16 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import java.awt.BorderLayout;
+import java.awt.Font;
+
 import com.rokue.game.GameSystem;
 import com.rokue.game.GameTimer;
 import com.rokue.game.actions.IAction;
@@ -25,6 +35,9 @@ import com.rokue.game.events.EventManager;
 import com.rokue.game.factories.EnchantmentFactory;
 import com.rokue.game.factories.MonsterFactory;
 import com.rokue.game.util.Position;
+import com.rokue.ui.MainMenuUI;
+
+
 
 /**
  * PlayMode represents the active gameplay state in the RoKUe-Like game.
@@ -554,6 +567,24 @@ public class PlayMode implements GameState {
         }
     }
 
+   
+private void handleGameEnd() {
+    
+    resetState();
+
+    // Notify the UI to show the congratulations screen
+    eventManager.notify("GAME_COMPLETED", null);
+    eventManager.notify("EXIT_PLAY_MODE", null);
+}
+
+// Then call handleGameEnd() wherever you detect the game is finished:
+    private void checkGameOver() {
+        int nextHallIndex = halls.indexOf(currentHall) + 1;
+        if (nextHallIndex >= halls.size()) {
+            handleGameEnd();
+        }
+    }
+
     private void resetState() {
         updateLock.lock();
         try {
@@ -566,10 +597,15 @@ public class PlayMode implements GameState {
                 currentHall.clearMonsters();
                 currentHall.clearEnchantments();
             }
+            
         } finally {
             updateLock.unlock();
         }
     }
+
+   
+
+        
 
     /**
      * Handles rune collection and hall transition.
@@ -634,8 +670,7 @@ public class PlayMode implements GameState {
                     // Clear final hall state
                     currentHall.setRune(null);
                     currentHall.setHero(null);
-                    
-                    eventManager.notify("GAME_COMPLETED", null);
+                    checkGameOver();
                     System.out.println("All halls completed. You win!");
                 }
             }
