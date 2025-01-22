@@ -4,6 +4,8 @@ import com.rokue.game.render.IRenderer;
 import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
 import com.rokue.ui.components.ImageBorder;
+import com.rokue.game.save.GameSaveManager;
+import com.rokue.game.save.GameSaveData;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -21,6 +23,7 @@ import javax.imageio.ImageIO;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.net.URL;
+import java.util.List;
 
 public class MainMenuUI extends JPanel implements IRenderer {
     private AnimatedBackgroundPanel menuPanel; // Store as a field
@@ -52,9 +55,11 @@ public class MainMenuUI extends JPanel implements IRenderer {
             ImageIcon playIcon = new ImageIcon(new File("src/main/resources/assets/playbutton.png").getAbsolutePath());
             ImageIcon helpIcon = new ImageIcon(new File("src/main/resources/assets/helpbutton.png").getAbsolutePath());
             ImageIcon exitIcon = new ImageIcon(new File("src/main/resources/assets/quitbutton.png").getAbsolutePath());
+            ImageIcon loadIcon = new ImageIcon(new File("src/main/resources/assets/loadbutton.png").getAbsolutePath());
 
             // create and setup buttons
             JButton playButton = createStyledButton(playIcon);
+            JButton loadButton = createStyledButton(loadIcon);
             JButton helpButton = createStyledButton(helpIcon);
             JButton exitButton = createStyledButton(exitIcon);
 
@@ -63,6 +68,14 @@ public class MainMenuUI extends JPanel implements IRenderer {
                 public void mousePressed(MouseEvent e) {
                     animateButtonClick(playButton, playIcon);
                     mainMenu.getEventManager().notify("START_GAME", null);
+                }
+            });
+
+            loadButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    animateButtonClick(loadButton, loadIcon);
+                    showLoadGameDialog();
                 }
             });
 
@@ -83,6 +96,8 @@ public class MainMenuUI extends JPanel implements IRenderer {
             });
 
             menuPanel.add(playButton);
+            menuPanel.add(Box.createVerticalStrut(20));
+            menuPanel.add(loadButton);
             menuPanel.add(Box.createVerticalStrut(20));
             menuPanel.add(helpButton);
             menuPanel.add(Box.createVerticalStrut(20));
@@ -426,7 +441,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
                         + "  <h2>Game Dynamics</h2>"
                         + "  <p>"
                         + "    <strong>Lives:</strong> Start with <span class='highlight'>3 lives</span>.<br>"
-                        + "    <strong>Timer:</strong> Each hall’s timer depends on the number of objects placed.<br>"
+                        + "    <strong>Timer:</strong> Each hall's timer depends on the number of objects placed.<br>"
                         + "    <strong>Bag:</strong> Stores enchantments for later use."
                         + "  </p>"
                         + "</div>"
@@ -505,6 +520,97 @@ public class MainMenuUI extends JPanel implements IRenderer {
         });
         timer.setRepeats(false);
         timer.start();
+    }
+
+    private void showLoadGameDialog() {
+        GameSaveManager saveManager = new GameSaveManager(mainMenu.getEventManager());
+        List<GameSaveManager.SaveFileInfo> saveFiles = saveManager.getSaveFiles();
+
+        if (saveFiles.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "No saved games found.",
+                "Load Game",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Create a custom dialog
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        JDialog loadDialog = new JDialog(parentFrame, "Load Game", true);
+        loadDialog.setLayout(new BorderLayout());
+        loadDialog.setSize(400, 300);
+        loadDialog.setLocationRelativeTo(this);
+
+        // Create a list model and JList
+        DefaultListModel<GameSaveManager.SaveFileInfo> listModel = new DefaultListModel<>();
+        saveFiles.forEach(listModel::addElement);
+        JList<GameSaveManager.SaveFileInfo> saveList = new JList<>(listModel);
+        saveList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        saveList.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        
+        // Add list to a scroll pane
+        JScrollPane scrollPane = new JScrollPane(saveList);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // Create button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton loadButton = new JButton("Load");
+        JButton cancelButton = new JButton("Cancel");
+        
+        // Style buttons
+        styleDialogButton(loadButton);
+        styleDialogButton(cancelButton);
+        
+        buttonPanel.add(loadButton);
+        buttonPanel.add(cancelButton);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        
+        // Add components to dialog
+        loadDialog.add(new JLabel("Select a saved game:", SwingConstants.CENTER), BorderLayout.NORTH);
+        loadDialog.add(scrollPane, BorderLayout.CENTER);
+        loadDialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        // Add button actions
+        loadButton.addActionListener(e -> {
+            GameSaveManager.SaveFileInfo selected = saveList.getSelectedValue();
+            if (selected != null) {
+                GameSaveData saveData = saveManager.loadGame(selected.getFileName());
+                if (saveData != null) {
+                    mainMenu.getEventManager().notify("LOAD_GAME", saveData);
+                    loadDialog.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(loadDialog,
+                        "Error loading save file.",
+                        "Load Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        
+        cancelButton.addActionListener(e -> loadDialog.dispose());
+        
+        // Show dialog
+        loadDialog.setVisible(true);
+    }
+
+    private void styleDialogButton(JButton button) {
+        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setForeground(Color.BLACK);
+        button.setBackground(Color.LIGHT_GRAY);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2, true));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setPreferredSize(new Dimension(100, 30));
+
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(Color.GRAY);
+            }
+
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(Color.LIGHT_GRAY);
+            }
+        });
     }
 
     @Override

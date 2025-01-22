@@ -1,26 +1,15 @@
 package com.rokue.game;
 
-import java.awt.event.KeyListener;
-import java.util.Arrays;
-import java.util.List;
-
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import com.rokue.game.states.BuildMode;
-import com.rokue.game.entities.Hall;
-import com.rokue.game.entities.Hero;
-import com.rokue.game.states.GameState;
-import com.rokue.game.states.PlayMode;
-import com.rokue.game.entities.Rune;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.input.GUIInputProvider;
+import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
-import com.rokue.game.util.Position;
-import com.rokue.ui.BuildModeUI;
+import com.rokue.game.states.PlayMode;
 import com.rokue.ui.MainMenuUI;
-import com.rokue.ui.PlayModeUI;
 
 public class Main {
     public static void main(String[] args) {

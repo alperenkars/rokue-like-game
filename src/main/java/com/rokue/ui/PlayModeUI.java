@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import com.rokue.ui.components.ImagePanel;
+import com.rokue.game.save.GameSaveManager;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
@@ -75,6 +76,8 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private boolean isPaused = false;
     private BufferedImage pauseImage;
     private BufferedImage resumeImage;
+    private BufferedImage saveImage;
+    private BufferedImage returnToMainImage;
     private final int BUTTON_SIZE = 40;
     private final int BUTTON_MARGIN = 20;
 
@@ -82,7 +85,7 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     // UI Panel constants
     private final int uiPanelWidth = 200;
     private final int uiPanelHeight = 400;
-    private final int inventoryStartY = 220; // Moved further down
+    private final int inventoryStartY = 320; // Moved down from 220
     private final int inventoryItemSize = 32;
     private final int inventorySpacing = 5;
     private final int INVENTORY_GRID_SIZE = 3; // 3x2 grid
@@ -385,6 +388,10 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
             }
         }
         checkPauseButtonClick(e.getX(), e.getY());
+        if (isPaused) {
+            checkSaveButtonClick(e.getX(), e.getY());
+            checkReturnToMainButtonClick(e.getX(), e.getY());
+        }
     }
 
     @Override
@@ -421,6 +428,30 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
         }
     }
 
+    private void checkSaveButtonClick(int mouseX, int mouseY) {
+        int buttonX = getWidth() - BUTTON_SIZE - BUTTON_MARGIN;
+        int buttonY = BUTTON_MARGIN + BUTTON_SIZE + BUTTON_MARGIN; // Position for save button
+
+        if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE &&
+                mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
+            GameSaveManager saveManager = new GameSaveManager(playMode.getEventManager());
+            saveManager.setCurrentPlayMode(playMode);  // Set the current PlayMode for WizardMonsters
+            saveManager.saveGame(playMode);
+            showInfoMessage("Game saved successfully!");
+        }
+    }
+
+    private void checkReturnToMainButtonClick(int mouseX, int mouseY) {
+        int buttonX = getWidth() - BUTTON_SIZE - BUTTON_MARGIN;
+        int buttonY = BUTTON_MARGIN + (2 * BUTTON_SIZE) + (2 * BUTTON_MARGIN); // Position for return button
+
+        if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE &&
+                mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
+            stopBackgroundMusic();
+            playMode.getEventManager().notify("SHOW_MAIN_MENU", null);
+        }
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -439,6 +470,18 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
         int x = getWidth() - BUTTON_SIZE - BUTTON_MARGIN;
         int y = BUTTON_MARGIN;
         g2d.drawImage(currentImage, x, y, BUTTON_SIZE, BUTTON_SIZE, null);
+
+        // Draw save button when paused
+        if (isPaused) {
+            if (saveImage != null) {
+                int saveY = y + BUTTON_SIZE + BUTTON_MARGIN;
+                g2d.drawImage(saveImage, x, saveY, BUTTON_SIZE, BUTTON_SIZE, null);
+                
+                // Draw return to main button below save button
+                int returnY = saveY + BUTTON_SIZE + BUTTON_MARGIN;
+                g2d.drawImage(returnToMainImage, x, returnY, BUTTON_SIZE, BUTTON_SIZE, null);
+            }
+        }
     }
 
     private void drawSurroundingWalls(Graphics2D g) {
@@ -493,13 +536,13 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private void drawUI(Graphics2D g, Hero hero) {
         // Draw UI background
         g.setColor(new Color(43, 27, 44));
-        g.fillRect(hallX + hallWidth + 20, 100, uiPanelWidth, uiPanelHeight);
+        g.fillRect(hallX + hallWidth + 20, 200, uiPanelWidth, uiPanelHeight);  // Moved from 180 to 200
 
         drawTime(g);
-                // Draw lives using heart icon
+        // Draw lives using heart icon
         int heartSize = 40;
         int heartX = hallX + hallWidth + 30;
-        int heartY = 150;
+        int heartY = 280;  // Moved from 230 to 280
         for (int i = 0; i < hero.getLives(); i++) {
             if (heartImage != null) {
                 g.drawImage(heartImage, 
@@ -529,7 +572,7 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     
         // Positioning
         int timeX = hallX + hallWidth + 30;
-        int timeY = 130;
+        int timeY = 250;  // Moved from 210 to 250
     
         // Load remaining time icon
         BufferedImage clockIcon = remainingTimeImage;
@@ -569,13 +612,13 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     }
 
     private void drawInventory(Graphics2D g, Hero hero) {
-        int inventoryX = hallX + hallWidth + 30;
+        int inventoryX = hallX + hallWidth + 40;  // Changed from 30 to 40
         
         // Draw inventory background
         g.drawImage(inventoryBgImage, inventoryX - 10, inventoryStartY, uiPanelWidth - 20, 150, null);
 
         // Calculate grid positions
-        int gridStartX = inventoryX + 25;
+        int gridStartX = inventoryX + 28;  // Changed from 25 to 35
         int gridStartY = inventoryStartY + 40;
         List<String> inventory = hero.getInventory();
         
@@ -644,6 +687,8 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
             wizardImage = ImageIO.read(getClass().getResource("/assets/wizard.png"));
             pauseImage = ImageIO.read(getClass().getResource("/assets/pausebutton.png"));
             resumeImage = ImageIO.read(getClass().getResource("/assets/resumebutton.png"));
+            saveImage = ImageIO.read(getClass().getResource("/assets/savebutton.png"));
+            returnToMainImage = ImageIO.read(getClass().getResource("/assets/returnToMain.png"));
             inventoryBgImage = ImageIO.read(getClass().getResource("/assets/Inventory.png"));
     
             // Load enchantment images

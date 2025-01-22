@@ -11,6 +11,7 @@ import com.rokue.game.entities.Hero;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.input.IInputProvider;
 import com.rokue.game.render.IRenderer;
+import com.rokue.game.save.GameSaveData;
 import com.rokue.game.states.BuildMode;
 import com.rokue.game.states.GameState;
 import com.rokue.game.states.MainMenu;
@@ -39,6 +40,24 @@ public class GameSystem {
             BuildMode buildMode = new BuildMode(eventManager);
             BuildModeUI buildModeUI = new BuildModeUI(buildMode);
             transitionTo(buildMode, buildModeUI);
+        });
+
+        eventManager.subscribe("LOAD_GAME", (eventType, data) -> {
+            if (data instanceof GameSaveData) {
+                GameSaveData saveData = (GameSaveData) data;
+                // Restore EventManager in Hero
+                saveData.getHero().setEventManager(eventManager);
+                
+                PlayMode playMode = new PlayMode(List.of(saveData.getCurrentHall()), 
+                                               saveData.getHero(), 
+                                               eventManager,
+                                               saveData.getRemainingTime());
+                // Restore the saved state
+                playMode.getCurrentHall().setMonsters(saveData.getMonsters());
+                playMode.getCurrentHall().setEnchantments(saveData.getEnchantments());
+                PlayModeUI playModeUI = new PlayModeUI(playMode, gameWindow);
+                transitionTo(playMode, playModeUI);
+            }
         });
 
         eventManager.subscribe("SWITCH_TO_PLAY_MODE", (eventType, data) -> {

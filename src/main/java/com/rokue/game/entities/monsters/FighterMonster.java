@@ -1,19 +1,25 @@
 package com.rokue.game.entities.monsters;
 
-import com.rokue.game.behaviour.StabDagger;
-import com.rokue.game.entities.Hall;
-import com.rokue.game.entities.Hero;
-import com.rokue.game.entities.monsters.Monster;
-import com.rokue.game.util.Position;
 import java.util.Random;
 
+import com.rokue.game.behaviour.StabDagger;
+import com.rokue.game.entities.Hall;
+import com.rokue.game.util.Position;
+
 public class FighterMonster extends Monster {
+    private static final long serialVersionUID = 1L;
     private static final Random random = new Random();
     private int moveCounter = 0;
     private static final int MOVE_INTERVAL = 60; // 60 frames = 1 second at 60 FPS
 
     public FighterMonster(Position startPosition) {
-        super(startPosition, new StabDagger());
+        super(startPosition, new StabDagger(), "FIGHTER");
+    }
+
+    // Custom deserialization to restore the transient behaviour field
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.setBehaviour(new StabDagger()); // Restore the behaviour after deserialization
     }
 
     public void move(Hall hall, Position luringGemPosition) {

@@ -1,29 +1,35 @@
 package com.rokue.game.entities.enchantments;
 
+import java.io.Serializable;
+
 import com.rokue.game.entities.Hero;
 import com.rokue.game.util.Position;
 
-public abstract class Enchantment {
-    private boolean isCollected;
-    protected Position position;
+public abstract class Enchantment implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Position position;
+    private boolean collected;
 
     public Enchantment(Position position) {
         this.position = position;
-        this.isCollected = false;
+        this.collected = false;
     }
 
-    public boolean isCollected() {
-        return isCollected;
-    }
-
-    public void collect() {
-        this.isCollected = true;
-    }
+    public abstract void applyEffect(Hero hero);
 
     public Position getPosition() {
         return position;
     }
 
-    public abstract void applyEffect(Hero hero);
+    public void setPosition(Position position) {
+        this.position = position;
+    }
 
+    public boolean isCollected() {
+        return collected;
+    }
+
+    public void collect() {
+        this.collected = true;
+    }
 }
