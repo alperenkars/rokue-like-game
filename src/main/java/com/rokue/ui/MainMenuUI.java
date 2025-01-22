@@ -415,7 +415,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
                         + "  </div>"
                         + "  <div class='enchantment'>"
                         + "    <strong>Luring Gem:</strong> Distracts Fighter Monsters."
-                        + "    <img src='" + getClass().getResource("/assets/luringgem.png") + "' alt='Luring Gem'/>"
+                        + "    <img src='" + getClass().getResource("/assets/lure.png") + "' alt='Luring Gem'/>"
                         + "  </div>"
                         + "</div>"
 
