@@ -1,5 +1,6 @@
 package com.rokue.ui;
 
+import java.io.File;
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Color;
