@@ -48,12 +48,14 @@ public class GameSaveManager {
         Path savePath = Paths.get(SAVE_DIRECTORY, fileName);
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(savePath.toFile()))) {
+            List<Hall> halls = playMode.getHalls();
+            int currentHallIndex = halls.indexOf(playMode.getCurrentHall());
+            
             GameSaveData saveData = new GameSaveData(
-                playMode.getCurrentHall(),
+                halls,
+                currentHallIndex,
                 playMode.getHero(),
-                playMode.getRemainingTime(),
-                playMode.getCurrentHall().getMonsters(),
-                playMode.getCurrentHall().getEnchantments()
+                playMode.getRemainingTime()
             );
             oos.writeObject(saveData);
         } catch (IOException e) {
@@ -93,36 +95,18 @@ public class GameSaveManager {
             // Restore transient fields
             saveData.getHero().setEventManager(eventManager);
             
-            // First clear existing monsters and enchantments from the hall
-            Hall hall = saveData.getCurrentHall();
-            hall.clearMonsters();
-            hall.clearEnchantments();
-            
-            // Restore the grid state first
-            Cell[][] gridState = saveData.getGridState();
-            if (gridState != null) {
-                hall.setGrid(gridState);
-            }
-            
-            // Restore monsters with their positions and behaviors
-            List<Monster> monsters = saveData.getMonsters();
-            for (Monster monster : monsters) {
-                // The readObject method in each monster class will handle basic behavior restoration
-                if (monster instanceof WizardMonster) {
-                    WizardMonster wizard = (WizardMonster) monster;
-                    wizard.setEventManager(eventManager);
-                    if (currentPlayMode != null) {
-                        wizard.setPlayMode(currentPlayMode);
+            // Restore all halls
+            List<Hall> halls = saveData.getHalls();
+            for (Hall hall : halls) {
+                // Restore monsters with their positions and behaviors
+                for (Monster monster : hall.getMonsters()) {
+                    if (monster instanceof WizardMonster) {
+                        WizardMonster wizard = (WizardMonster) monster;
+                        wizard.setEventManager(eventManager);
+                        if (currentPlayMode != null) {
+                            wizard.setPlayMode(currentPlayMode);
+                        }
                     }
-                }
-                hall.addMonster(monster);
-            }
-            
-            // Restore enchantments with their positions
-            List<Enchantment> enchantments = saveData.getEnchantments();
-            for (Enchantment enchantment : enchantments) {
-                if (!enchantment.isCollected()) {
-                    hall.addEnchantment(enchantment);
                 }
             }
             

@@ -1,5 +1,6 @@
 package com.rokue.game.states;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,10 +31,12 @@ import com.rokue.game.entities.enchantments.Enchantment;
 import com.rokue.game.entities.monsters.ArcherMonster;
 import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.events.EventListener;
 import com.rokue.game.events.EventManager;
 import com.rokue.game.factories.EnchantmentFactory;
 import com.rokue.game.factories.MonsterFactory;
+import com.rokue.game.save.GameSaveData;
 import com.rokue.game.util.Position;
 import com.rokue.ui.MainMenuUI;
 
@@ -689,6 +692,10 @@ private void handleGameEnd() {
         return currentHall;
     }
 
+    public synchronized List<Hall> getHalls() {
+        return halls;
+    }
+
     public synchronized Hero getHero() {
         return hero;
     }
@@ -707,6 +714,43 @@ private void handleGameEnd() {
                 MoveAction moveAction = (MoveAction) action;
                 this.hero.move(moveAction.getDirection(), this.currentHall);
             }
+        }
+    }
+
+    public void loadFromSaveData(GameSaveData saveData) {
+        hallTransitionLock.lock();
+        try {
+            // Load all halls
+            this.halls = saveData.getHalls();
+            
+            // Set current hall
+            this.currentHall = halls.get(saveData.getCurrentHallIndex());
+            
+            // Set up hero
+            this.hero = saveData.getHero();
+            this.currentHall.setHero(hero);
+            
+            // Initialize timer if needed
+            if (gameTimer == null) {
+                gameTimer = new GameTimer(eventManager);
+            }
+            
+            // Restart timer with saved time
+            gameTimer.stop();
+            gameTimer.start(saveData.getRemainingTime());
+            
+            // Make sure all halls have their event managers and play mode set
+            for (Hall hall : halls) {
+                for (Monster monster : hall.getMonsters()) {
+                    if (monster instanceof WizardMonster) {
+                        WizardMonster wizard = (WizardMonster) monster;
+                        wizard.setEventManager(eventManager);
+                        wizard.setPlayMode(this);
+                    }
+                }
+            }
+        } finally {
+            hallTransitionLock.unlock();
         }
     }
 }

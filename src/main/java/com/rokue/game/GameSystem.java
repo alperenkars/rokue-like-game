@@ -48,15 +48,17 @@ public class GameSystem {
                 // Restore EventManager in Hero
                 saveData.getHero().setEventManager(eventManager);
                 
-                PlayMode playMode = new PlayMode(List.of(saveData.getCurrentHall()), 
+                PlayMode playMode = new PlayMode(saveData.getHalls(), 
                                                saveData.getHero(), 
                                                eventManager,
                                                saveData.getRemainingTime());
-                // Restore the saved state
-                playMode.getCurrentHall().setMonsters(saveData.getMonsters());
-                playMode.getCurrentHall().setEnchantments(saveData.getEnchantments());
+                
+                // Create UI and transition first to initialize PlayMode
                 PlayModeUI playModeUI = new PlayModeUI(playMode, gameWindow);
                 transitionTo(playMode, playModeUI);
+                
+                // Then load the saved state
+                playMode.loadFromSaveData(saveData);
             }
         });
 
