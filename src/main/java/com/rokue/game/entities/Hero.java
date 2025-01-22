@@ -1,5 +1,6 @@
 package com.rokue.game.entities;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,20 +17,27 @@ import com.rokue.game.events.EventManager;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
-public class Hero {
+public class Hero implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final List<String> inventory; //for the enchantments
     private static final int MAX_INVENTORY_SIZE = 6;
     private volatile Position position;
     private final AtomicInteger lives;
-    private EventManager eventManager;
+    private transient EventManager eventManager;
     private volatile boolean isDead = false;
     private final ReentrantLock movementLock = new ReentrantLock();
 
     public Hero(Position startPosition, EventManager eventManager, List<String> inventory) {
         this.position = startPosition;
-        this.inventory = new ArrayList<>();
+        this.inventory = new ArrayList<>(inventory);
         this.lives = new AtomicInteger(3); // Default lives
         this.eventManager = eventManager;
+    }
+
+    // Custom deserialization to handle the transient EventManager
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // The EventManager will need to be set after deserialization
     }
 
     public Position getPosition() {
@@ -174,13 +182,20 @@ public class Hero {
     public EventManager getEventManager() {
         return eventManager;
     }
+
+    public void setEventManager(EventManager eventManager) {
+        this.eventManager = eventManager;
+    }
+
     public List<String> getInventory() {
         return inventory;
     }
+
     public void addToInventory(String item) {
         inventory.add(item);
         System.out.println("Hero: Added " + item + " to inventory.");
     }
+
     public void removeFromInventory(String item) {
         if (inventory.remove(item)) {
             System.out.println("Hero: Removed " + item + " from inventory.");
@@ -188,6 +203,7 @@ public class Hero {
             System.out.println("Hero: Item " + item + " not found in inventory.");
         }
     }
+
     public boolean hasItem(String item) {
         return inventory.contains(item);
     }

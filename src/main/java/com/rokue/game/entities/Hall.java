@@ -1,5 +1,6 @@
 package com.rokue.game.entities;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,8 @@ import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 
-public class Hall {
+public class Hall implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String name;
     private int width;
     private int height;
@@ -358,5 +360,15 @@ public class Hall {
 
     public Hero getHero() {
         return hero;
+    }
+
+    public void setMonsters(List<Monster> monsters) {
+        this.monsters.clear();
+        this.monsters.addAll(monsters);
+    }
+
+    public void setEnchantments(List<Enchantment> enchantments) {
+        this.enchantments.clear();
+        this.enchantments.addAll(enchantments);
     }
 }

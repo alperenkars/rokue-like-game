@@ -13,14 +13,14 @@ import com.rokue.game.util.Position;
 public class WizardMonster extends Monster {
     private static final double LOW_TIME_THRESHOLD = 30.0;
     private static final double HIGH_TIME_THRESHOLD = 70.0;
-    private final EventManager eventManager;
+    private transient final EventManager eventManager;
     private final Hall currentHall;
     private boolean markedForRemoval = false;
     private final int totalTime;
-    private final PlayMode playMode;
+    private transient final PlayMode playMode;
 
     public WizardMonster(Position startPosition, EventManager eventManager, Hall currentHall, int totalTime, int remainingTime, PlayMode playMode) {
-        super(startPosition, null); // We'll set the strategy after calculating time percentage
+        super(startPosition, null, "WIZARD"); // We'll set the strategy after calculating time percentage
         this.eventManager = eventManager;
         this.currentHall = currentHall;
         this.totalTime = totalTime;

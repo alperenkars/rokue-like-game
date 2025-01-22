@@ -1,11 +1,10 @@
 package com.rokue.game.entities.monsters;
 
+import java.util.Random;
+
 import com.rokue.game.behaviour.StabDagger;
 import com.rokue.game.entities.Hall;
-import com.rokue.game.entities.Hero;
-import com.rokue.game.entities.monsters.Monster;
 import com.rokue.game.util.Position;
-import java.util.Random;
 
 public class FighterMonster extends Monster {
     private static final Random random = new Random();
@@ -13,7 +12,7 @@ public class FighterMonster extends Monster {
     private static final int MOVE_INTERVAL = 60; // 60 frames = 1 second at 60 FPS
 
     public FighterMonster(Position startPosition) {
-        super(startPosition, new StabDagger());
+        super(startPosition, new StabDagger(), "FIGHTER");
     }
 
     public void move(Hall hall, Position luringGemPosition) {

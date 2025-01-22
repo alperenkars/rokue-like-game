@@ -1,37 +1,42 @@
 package com.rokue.game.entities;
 
-import com.rokue.game.util.Position;
-
-import javax.swing.*;
 import java.io.File;
 import java.io.Serializable;
 
+import javax.swing.ImageIcon;
 
-public class DungeonObject extends JLabel implements Serializable {
-    private static final long serialVersionUID = 1L; // Add a serialVersionUID
-    private final String name;
-    private final String imagePath;
+import com.rokue.game.util.Position;
+
+
+public class DungeonObject implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private String name;
+    private transient ImageIcon icon;  // transient because ImageIcon is not serializable
+    private String iconPath;  // store the path instead
+    private int widthInCells;
+    private int heightInCells;
     private Position position;
-    private final int widthInCells;  // Number of cells wide
-    private final int heightInCells; // Number of cells tall
 
-    public DungeonObject(String name, String imagePath, int widthInCells, int heightInCells) {
+    public DungeonObject(String name, String iconPath, int widthInCells, int heightInCells) {
         this.name = name;
-        this.imagePath = imagePath;
+        this.iconPath = iconPath;
+        this.icon = new ImageIcon(new File(iconPath).getAbsolutePath());
         this.widthInCells = widthInCells;
         this.heightInCells = heightInCells;
+    }
 
-        ImageIcon icon = new ImageIcon(new File(imagePath).getAbsolutePath());
-        setIcon(icon);
-        setSize(icon.getIconWidth(), icon.getIconHeight());
+    // Custom deserialization to restore the icon
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.icon = new ImageIcon(new File(iconPath).getAbsolutePath());
     }
 
     public String getName() {
         return name;
     }
 
-    public String getImagePath() {
-        return imagePath;
+    public ImageIcon getIcon() {
+        return icon;
     }
 
     public int getWidthInCells() {
@@ -49,5 +54,4 @@ public class DungeonObject extends JLabel implements Serializable {
     public void setPosition(Position position) {
         this.position = position;
     }
-
 }
