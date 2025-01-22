@@ -523,7 +523,7 @@ public class MainMenuUI extends JPanel implements IRenderer {
     }
 
     private void showLoadGameDialog() {
-        GameSaveManager saveManager = new GameSaveManager();
+        GameSaveManager saveManager = new GameSaveManager(mainMenu.getEventManager());
         List<GameSaveManager.SaveFileInfo> saveFiles = saveManager.getSaveFiles();
 
         if (saveFiles.isEmpty()) {

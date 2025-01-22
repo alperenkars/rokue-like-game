@@ -434,7 +434,8 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
 
         if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_SIZE &&
                 mouseY >= buttonY && mouseY <= buttonY + BUTTON_SIZE) {
-            GameSaveManager saveManager = new GameSaveManager();
+            GameSaveManager saveManager = new GameSaveManager(playMode.getEventManager());
+            saveManager.setCurrentPlayMode(playMode);  // Set the current PlayMode for WizardMonsters
             saveManager.saveGame(playMode);
             showInfoMessage("Game saved successfully!");
         }

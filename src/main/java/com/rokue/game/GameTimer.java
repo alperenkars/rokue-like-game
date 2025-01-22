@@ -1,8 +1,9 @@
 package com.rokue.game;
 
-import com.rokue.game.events.EventManager;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import com.rokue.game.events.EventManager;
 
 public class GameTimer {
 

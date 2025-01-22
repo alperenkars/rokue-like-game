@@ -363,12 +363,86 @@ public class Hall implements Serializable {
     }
 
     public void setMonsters(List<Monster> monsters) {
+        // Clear existing monsters from grid cells
+        for (Monster monster : this.monsters) {
+            if (monster.getPosition() != null) {
+                Cell cell = getCell(monster.getPosition());
+                if (cell != null) {
+                    cell.setContent(null);
+                }
+            }
+        }
         this.monsters.clear();
-        this.monsters.addAll(monsters);
+        
+        // Add new monsters and place them in grid cells
+        for (Monster monster : monsters) {
+            if (monster.getPosition() != null) {
+                this.monsters.add(monster);
+                Cell cell = getCell(monster.getPosition());
+                if (cell != null) {
+                    cell.setContent(monster);
+                }
+            }
+        }
     }
 
     public void setEnchantments(List<Enchantment> enchantments) {
+        // Clear existing enchantments from grid cells
+        for (Enchantment enchantment : this.enchantments) {
+            if (enchantment.getPosition() != null) {
+                Cell cell = getCell(enchantment.getPosition());
+                if (cell != null) {
+                    cell.setContent(null);
+                }
+            }
+        }
         this.enchantments.clear();
-        this.enchantments.addAll(enchantments);
+        
+        // Add new enchantments and place them in grid cells
+        for (Enchantment enchantment : enchantments) {
+            if (enchantment.getPosition() != null) {
+                this.enchantments.add(enchantment);
+                Cell cell = getCell(enchantment.getPosition());
+                if (cell != null) {
+                    cell.setContent(enchantment);
+                }
+            }
+        }
+    }
+
+    public Cell[][] getGrid() {
+        return grid;
+    }
+
+    public void setGrid(Cell[][] grid) {
+        this.grid = grid;
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // If grid is null (which shouldn't happen), initialize it
+        if (grid == null) {
+            initializeGrid();
+        }
+        
+        // Restore monsters in grid cells
+        for (Monster monster : monsters) {
+            if (monster.getPosition() != null) {
+                Cell cell = getCell(monster.getPosition());
+                if (cell != null) {
+                    cell.setContent(monster);
+                }
+            }
+        }
+        
+        // Restore enchantments in grid cells
+        for (Enchantment enchantment : enchantments) {
+            if (enchantment.getPosition() != null) {
+                Cell cell = getCell(enchantment.getPosition());
+                if (cell != null) {
+                    cell.setContent(enchantment);
+                }
+            }
+        }
     }
 }

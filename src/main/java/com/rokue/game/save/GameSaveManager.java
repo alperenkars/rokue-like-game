@@ -14,19 +14,32 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.rokue.game.entities.Hall;
+import com.rokue.game.entities.enchantments.Enchantment;
+import com.rokue.game.entities.monsters.Monster;
+import com.rokue.game.entities.monsters.WizardMonster;
+import com.rokue.game.events.EventManager;
 import com.rokue.game.states.PlayMode;
+import com.rokue.game.util.Cell;
 
 public class GameSaveManager {
     private static final String SAVE_DIRECTORY = "saves";
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    private final EventManager eventManager;
+    private PlayMode currentPlayMode;
 
-    public GameSaveManager() {
+    public GameSaveManager(EventManager eventManager) {
+        this.eventManager = eventManager;
         // Create saves directory if it doesn't exist
         try {
             Files.createDirectories(Paths.get(SAVE_DIRECTORY));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setCurrentPlayMode(PlayMode playMode) {
+        this.currentPlayMode = playMode;
     }
 
     public void saveGame(PlayMode playMode) {
@@ -75,7 +88,45 @@ public class GameSaveManager {
         Path savePath = Paths.get(SAVE_DIRECTORY, fileName);
         
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(savePath.toFile()))) {
-            return (GameSaveData) ois.readObject();
+            GameSaveData saveData = (GameSaveData) ois.readObject();
+            
+            // Restore transient fields
+            saveData.getHero().setEventManager(eventManager);
+            
+            // First clear existing monsters and enchantments from the hall
+            Hall hall = saveData.getCurrentHall();
+            hall.clearMonsters();
+            hall.clearEnchantments();
+            
+            // Restore the grid state first
+            Cell[][] gridState = saveData.getGridState();
+            if (gridState != null) {
+                hall.setGrid(gridState);
+            }
+            
+            // Restore monsters with their positions and behaviors
+            List<Monster> monsters = saveData.getMonsters();
+            for (Monster monster : monsters) {
+                // The readObject method in each monster class will handle basic behavior restoration
+                if (monster instanceof WizardMonster) {
+                    WizardMonster wizard = (WizardMonster) monster;
+                    wizard.setEventManager(eventManager);
+                    if (currentPlayMode != null) {
+                        wizard.setPlayMode(currentPlayMode);
+                    }
+                }
+                hall.addMonster(monster);
+            }
+            
+            // Restore enchantments with their positions
+            List<Enchantment> enchantments = saveData.getEnchantments();
+            for (Enchantment enchantment : enchantments) {
+                if (!enchantment.isCollected()) {
+                    hall.addEnchantment(enchantment);
+                }
+            }
+            
+            return saveData;
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             return null;

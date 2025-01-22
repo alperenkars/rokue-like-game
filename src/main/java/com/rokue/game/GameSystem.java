@@ -50,7 +50,8 @@ public class GameSystem {
                 
                 PlayMode playMode = new PlayMode(List.of(saveData.getCurrentHall()), 
                                                saveData.getHero(), 
-                                               eventManager);
+                                               eventManager,
+                                               saveData.getRemainingTime());
                 // Restore the saved state
                 playMode.getCurrentHall().setMonsters(saveData.getMonsters());
                 playMode.getCurrentHall().setEnchantments(saveData.getEnchantments());
