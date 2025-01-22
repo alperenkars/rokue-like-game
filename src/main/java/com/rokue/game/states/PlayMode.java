@@ -88,6 +88,7 @@ public class PlayMode implements GameState {
     private final Object enchantmentLock = new Object();
     private long currentTime = System.currentTimeMillis();
     private int initialTime;
+    private int completedHallsCount = 0;
 
     /**
      * Creates a new PlayMode instance with the given halls, hero, and event manager.
@@ -143,7 +144,7 @@ public class PlayMode implements GameState {
                 synchronized (hero) {
                     if (!isPaused() && hero.getLives() > 0) {
                         hero.decreaseLife();
-                        System.out.println("PlayMode: Hero hit by arrow! Lives remaining: " + hero.getLives());
+                        eventManager.notify("LOG_MESSAGE", "Hero hit by arrow!");
                     }
                 }
             }
@@ -156,7 +157,7 @@ public class PlayMode implements GameState {
                 synchronized (hero) {
                     if (!isPaused() && hero.getLives() > 0) {
                         hero.decreaseLife();
-                        System.out.println("PlayMode: Hero stabbed by fighter! Lives remaining: " + hero.getLives());
+                        eventManager.notify("LOG_MESSAGE", "Hero stabbed by fighter!");
                     }
                 }
             }
@@ -167,7 +168,7 @@ public class PlayMode implements GameState {
             @Override
             public void onEvent(String eventType, Object data) {
                 if (data instanceof String) {
-                    System.out.println("PlayMode: " + data);
+                    eventManager.notify("LOG_MESSAGE", data);
                     eventManager.notify("DISPLAY_INFO", data);
                 }
             }
@@ -181,7 +182,7 @@ public class PlayMode implements GameState {
                     if (!isPaused()) {
                         int currentLives = hero.getLives();
                         currentLives++;
-                        System.out.println("PlayMode: Added 1 life. Lives: " + currentLives);
+                       // eventManager.notify("LOG_MESSAGE", "PlayMode: Added 1 life. Lives: " + currentLives);
                     }
                 }
             }
@@ -194,7 +195,7 @@ public class PlayMode implements GameState {
                 if (!isPaused() && data instanceof Integer) {
                     int seconds = (Integer) data;
                     gameTimer.addTime(seconds);
-                    System.out.println("PlayMode: Added " + seconds + " seconds to timer");
+                    eventManager.notify("LOG_MESSAGE", "Added " + seconds + " seconds");
                 }
             }
         });
@@ -217,7 +218,7 @@ public class PlayMode implements GameState {
                     
                     isInvisible = true;
                     invisibilityEndTime = System.currentTimeMillis() + (duration * 1000);
-                    System.out.println("PlayMode: Hero invisible for " + duration + " seconds");
+                    eventManager.notify("LOG_MESSAGE", "Hero invisible now.");
 
                     // Start a timer to check invisibility status periodically
                     new Thread(() -> {
@@ -243,7 +244,7 @@ public class PlayMode implements GameState {
                                         ((ShootArrow)monster.getBehaviour()).setHeroInvisible(false);
                                     }
                                 }
-                                System.out.println("PlayMode: Hero visibility restored");
+                                eventManager.notify("LOG_MESSAGE", "Hero visibility restored");
                             }
                         }
                     }).start();
@@ -286,14 +287,14 @@ public class PlayMode implements GameState {
                                 Thread.sleep(duration * 1000);
                                 if (!isPaused()) {
                                     eventManager.notify("HIDE_HIGHLIGHT", null);
-                                    System.out.println("PlayMode: Rune highlight removed");
+                                   // eventManager.notify("LOG_MESSAGE", "PlayMode: Rune highlight removed");
                                 }
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             }
                         }).start();
                         
-                        System.out.println("PlayMode: Highlighting region from " + highlightStart + " to " + highlightEnd);
+                        eventManager.notify("LOG_MESSAGE", "Rune highlighted.");
                     }
                 }
             }
@@ -311,7 +312,7 @@ public class PlayMode implements GameState {
                             ((StabDagger)monster.getBehaviour()).setTargetPosition(targetPos);
                         }
                     }
-                    System.out.println("PlayMode: Fighter monsters distracted to " + targetPos);
+                    eventManager.notify("LOG_MESSAGE", "Fighter monsters distracted." );
                 }
             }
         });
@@ -337,7 +338,6 @@ public class PlayMode implements GameState {
                         if (rune != null) {
                             rune.moveToRandomObject(currentHall);
                             currentHall.setRune(rune);
-                            System.out.println("PlayMode: Rune teleported by wizard!");
                         }
                     }
                 }
@@ -350,7 +350,7 @@ public class PlayMode implements GameState {
                 synchronized (hero) {
                     if (!isPaused()) {
                         hero.increaseLife();
-                        System.out.println("PlayMode: Added 1 life. Lives: " + hero.getLives());
+                      //  eventManager.notify("LOG_MESSAGE", "PlayMode: Added 1 life. Lives: " + hero.getLives());
                     }
                 }
             }
@@ -362,7 +362,7 @@ public class PlayMode implements GameState {
                 synchronized (PlayMode.this) {
                     if (!isPaused()) {
                         gameTimer.stop();
-                        System.out.println("PlayMode: Hero is dead. Game Over!");
+                        eventManager.notify("LOG_MESSAGE", "Hero is dead. Game Over!");
                         eventManager.notify("GAME_OVER", null);
                     }
                 }
@@ -671,6 +671,7 @@ private void handleGameEnd() {
                     Rune rune = new Rune(runePos);
                     currentHall.setRune(rune);
                 }
+                onHallCompleted();
             } else {
                 synchronized(this) {
                     if (gameTimer != null) {
@@ -686,6 +687,11 @@ private void handleGameEnd() {
         } finally {
             hallTransitionLock.unlock();
         }
+    }
+
+    private void onHallCompleted() {
+        completedHallsCount++;
+        getEventManager().notify("HALL_COMPLETED", completedHallsCount);
     }
 
     public synchronized Hall getCurrentHall() {

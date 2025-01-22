@@ -106,6 +106,10 @@ public class GameSystem {
             
             
         });
+
+        eventManager.subscribe("HALL_COMPLETED", (eventType, data) -> {
+            eventManager.notify("SHOW_HALL_COMPLETED_EFFECT", data);
+        });
     }
 
     public void transitionTo(GameState newState, JPanel newUI) {

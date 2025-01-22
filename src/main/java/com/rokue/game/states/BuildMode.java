@@ -21,10 +21,10 @@ public class BuildMode implements GameState {
         this.halls = new ArrayList<>();
 
         // Adding halls with their distinct names and minimum object requirements
-        halls.add(new Hall("Earth Hall", 20, 20, 6));   // Earth Hall: min 6 objects
-        halls.add(new Hall("Air Hall", 20, 20, 9));    // Air Hall: min 9 objects
-        halls.add(new Hall("Water Hall", 20, 20, 13)); // Water Hall: min 13 objects
-        halls.add(new Hall("Fire Hall", 20, 20, 17));  // Fire Hall: min 17 objects
+        halls.add(new Hall("Earth Hall", 20, 20, 1));   // Earth Hall: min 6 objects
+        halls.add(new Hall("Air Hall", 20, 20, 1));    // Air Hall: min 9 objects
+        halls.add(new Hall("Water Hall", 20, 20, 1)); // Water Hall: min 13 objects
+        halls.add(new Hall("Fire Hall", 20, 20, 1));  // Fire Hall: min 17 objects
 
         currentHall = halls.get(0);
 
