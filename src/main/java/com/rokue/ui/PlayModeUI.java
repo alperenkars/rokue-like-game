@@ -1,42 +1,42 @@
 package com.rokue.ui;
 
+import java.awt.AlphaComposite;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.awt.Image;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import com.rokue.ui.components.ImagePanel;
-import com.rokue.game.save.GameSaveManager;
 
 import javax.imageio.ImageIO;
-import javax.sound.sampled.*;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import java.awt.BorderLayout;
-import java.awt.Cursor;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.net.URL;
-import java.awt.AlphaComposite;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import com.rokue.game.entities.DungeonObject;
@@ -54,10 +54,12 @@ import com.rokue.game.entities.monsters.FighterMonster;
 import com.rokue.game.entities.monsters.Monster;
 import com.rokue.game.entities.monsters.WizardMonster;
 import com.rokue.game.render.IRenderer;
+import com.rokue.game.save.GameSaveManager;
 import com.rokue.game.states.GameState;
 import com.rokue.game.states.PlayMode;
 import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
+import com.rokue.ui.components.ImagePanel;
 
 public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private PlayMode playMode;
@@ -837,9 +839,13 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
              JButton backButton = new JButton("Go Back to Main Screen");
              styleButton(backButton);
  
-             backButton.addActionListener(new ActionListener() {
+             backButton.addMouseListener(new MouseListener() {
                  @Override
-                 public void actionPerformed(ActionEvent e) {
+                 public void mousePressed(MouseEvent e) {
+                     // Scale down effect
+                     backButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+                     backButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1, true));
+                     
                      // Stop the background music
                      stopBackgroundMusic();
 
@@ -849,6 +855,22 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
                      // Notify GameSystem to show the main menu
                      playMode.getEventManager().notify("SHOW_MAIN_MENU", null);
                  }
+                 
+                 @Override
+                 public void mouseReleased(MouseEvent e) {
+                     // Restore original size
+                     backButton.setFont(new Font("SansSerif", Font.BOLD, 18));
+                     backButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2, true));
+                 }
+
+                 @Override
+                 public void mouseClicked(MouseEvent e) {}
+
+                 @Override
+                 public void mouseEntered(MouseEvent e) {}
+
+                 @Override
+                 public void mouseExited(MouseEvent e) {}
              });
  
              buttonPanel.add(backButton);
