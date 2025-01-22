@@ -61,6 +61,8 @@ import com.rokue.game.util.Cell;
 import com.rokue.game.util.Position;
 import com.rokue.ui.components.ImagePanel;
 
+import java.util.ArrayList;
+
 public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private PlayMode playMode;
     private JFrame gameWindow;
@@ -113,6 +115,9 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private BufferedImage extraLifeImage;
     private BufferedImage heartImage;
     private BufferedImage remainingTimeImage;
+    private BufferedImage waterCompleteImage;
+    private BufferedImage earthCompleteImage;
+    private BufferedImage airCompleteImage;
 
     private Position highlightStart = null;
     private Position highlightEnd = null;
@@ -126,6 +131,7 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
 
     private boolean waitingForLuringDirection = false;
 
+    private List<String> notifications = new ArrayList<>();
 
     
     public PlayModeUI(PlayMode playMode, JFrame gameWindow) {
@@ -166,6 +172,18 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
             repaint();
         });
         
+        playMode.getEventManager().subscribe("SHOW_HALL_COMPLETED_EFFECT", (eventType, data) -> {
+            if (data instanceof Integer) {
+                showHallCompletedEffect((Integer)data);
+            }
+        });
+
+        playMode.getEventManager().subscribe("LOG_MESSAGE", (eventType, data) -> {
+            if (data instanceof String) {
+                notifications.add((String) data);
+                repaint();
+            }
+        });
 
         // Add key listener for enchantment shortcuts
         this.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -234,6 +252,12 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
         // Make panel focusable to receive keyboard events
         this.setFocusable(true);
         this.requestFocusInWindow();
+
+        // Subscribe to HALL_COMPLETED event to clear notifications
+        playMode.getEventManager().subscribe("HALL_COMPLETED", (eventType, data) -> {
+            notifications.clear();
+            repaint();
+        });
     }
 
     private void drawHall(Graphics2D g, Hall hall) {
@@ -484,6 +508,10 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
                 g2d.drawImage(returnToMainImage, x, returnY, BUTTON_SIZE, BUTTON_SIZE, null);
             }
         }
+
+        Graphics2D g2dNotifications = (Graphics2D) g.create();
+        drawNotifications(g2dNotifications);
+        g2dNotifications.dispose();
     }
 
     private void drawSurroundingWalls(Graphics2D g) {
@@ -536,14 +564,14 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
  
 
     private void drawUI(Graphics2D g, Hero hero) {
-        // Draw UI background
-        g.setColor(new Color(43, 27, 44));
-        g.fillRect(hallX + hallWidth + 20, 200, uiPanelWidth, uiPanelHeight);  // Moved from 180 to 200
-
+                // Draw UI background with transparency
+        Color semiTransparentColor = new Color(124, 166, 171, 0); // Alpha set to 150 for semi-transparency
+        g.setColor(semiTransparentColor);
+        g.fillRect(hallX + hallWidth + 20, 200, uiPanelWidth, uiPanelHeight);
         drawTime(g);
         // Draw lives using heart icon
         int heartSize = 40;
-        int heartX = hallX + hallWidth + 30;
+        int heartX = hallX + hallWidth + 50;
         int heartY = 280;  // Moved from 230 to 280
         for (int i = 0; i < hero.getLives(); i++) {
             if (heartImage != null) {
@@ -569,7 +597,7 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     
         // Text and icon configuration
         String timeText = "Time: " + playMode.getRemainingTime() + " seconds";
-        int iconSize = 50;
+        int iconSize = 50; // Reduced icon size
         int padding = -10;
     
         // Positioning
@@ -580,7 +608,7 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
         BufferedImage clockIcon = remainingTimeImage;
     
         // Custom Font
-        Font timeFont = new Font("Verdana", Font.BOLD, 14);
+        Font timeFont = new Font("Verdana", Font.BOLD, 14); // Increased font size for readability
         g2d.setFont(timeFont);
         FontMetrics fm = g2d.getFontMetrics();
     
@@ -589,12 +617,12 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
         int textHeight = fm.getHeight();
     
         // Background Rectangle dimensions
-    /*     int bgWidth = iconSize + padding + textWidth + padding;
+        int bgWidth = iconSize + padding + textWidth + padding;
         int bgHeight = Math.max(iconSize, textHeight) + 60;
     
         // Draw semi-transparent background rectangle
-        g2d.setColor(new Color(0, 0, 0, 150)); // Semi-transparent black
-        g2d.fillRoundRect(timeX - 5, timeY - textHeight + 10, bgWidth, bgHeight, 15, 15);*/
+        g2d.setColor(new Color(0, 0, 0, 100)); // Semi-transparent black
+        g2d.fillRoundRect(timeX - 10, timeY - 30, textWidth + iconSize + padding + 30, textHeight + 30, 15, 15);
     
         // Draw remaining time icon
         if (clockIcon != null) {
@@ -701,6 +729,9 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
             extraTimeImage = ImageIO.read(getClass().getClassLoader().getResource("assets/clock.png"));
             heartImage = ImageIO.read(getClass().getClassLoader().getResource("assets/heart.png")); // Load heart image
             remainingTimeImage = ImageIO.read(getClass().getClassLoader().getResource("assets/rclock.png")); // Load heart image
+            waterCompleteImage = ImageIO.read(new File("src/main/resources/assets/watercomplete.png"));
+            earthCompleteImage = ImageIO.read(new File("src/main/resources/assets/earthcomplete.png"));
+            airCompleteImage = ImageIO.read(new File("src/main/resources/assets/aircomplete.png"));
     
             // Make the panel focusable to receive keyboard events
             setFocusable(true);
@@ -742,11 +773,11 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
     private String getEnchantmentMessage(String type) {
         switch (type) {
             case "CLOAK":
-                return "Activated Cloak of Protection (P)! You are invisible to archers for 20 seconds.";
+                return "Activated Cloak of Protection!";
             case "REVEAL":
-                return "Used Reveal enchantment (R)! The rune's location is temporarily revealed.";
+                return "Used Reveal enchantment!";
             case "LURE":
-                return "Luring Gem activated! Fighter monsters will move towards that direction.";
+                return "Luring Gem activated!";
             default:
                 return "";
         }
@@ -763,22 +794,18 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
      * A custom JPanel that supports fading by adjusting its alpha transparency.
      */
     private class FadingPanel extends JPanel {
-        private float alpha = 0f;
-
-        /**
-         * Sets the alpha value for transparency.
-         *
-         * @param value The new alpha value (0.0f - 1.0f).
-         */
+        private float alpha = 1.0f;
         public void setAlpha(float value) {
-            alpha = Math.min(1f, Math.max(0f, value));
+            alpha = value;
             repaint();
+        }
+        public float getAlpha() {
+            return alpha;
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2d = (Graphics2D) g.create();
-            // Set the alpha composite for transparency
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
             super.paintComponent(g2d);
             g2d.dispose();
@@ -825,19 +852,35 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
             overlayPanel.setLayout(new BorderLayout());
 
              // Congratulations Label at the Top
-             JLabel congratsLabel = new JLabel("🎉 Congratulations! You Completed the Game! 🎉", SwingConstants.CENTER);
+           /*   JLabel congratsLabel = new JLabel("🎉 Congratulations! You Completed the Game! 🎉", SwingConstants.CENTER);
              congratsLabel.setFont(new Font("SansSerif", Font.BOLD, 32));
              congratsLabel.setForeground(Color.BLACK); // Black text for visibility against white background
              congratsLabel.setBorder(BorderFactory.createEmptyBorder(50, 10, 10, 10)); // Top padding
-             overlayPanel.add(congratsLabel, BorderLayout.NORTH);
+             overlayPanel.add(congratsLabel, BorderLayout.NORTH); */
  
              // Button Panel at the Bottom
              JPanel buttonPanel = new JPanel();
              buttonPanel.setOpaque(false);
              buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 50)); // Centered with padding
  
-             JButton backButton = new JButton("Go Back to Main Screen");
-             styleButton(backButton);
+                        // Create the back button
+            JButton backButton = new JButton("Go Back to Main Screen");
+
+            // Style the button
+            styleButton(backButton);
+
+            // Set the background to white
+            backButton.setBackground(Color.WHITE);
+
+            // Optional: Set the text color for better visibility
+            backButton.setForeground(Color.BLACK);
+
+            // Ensure the background color is visible
+            backButton.setOpaque(true);
+            backButton.setBorderPainted(false);
+
+            // Optional: Remove focus painting
+            backButton.setFocusPainted(false);
  
              backButton.addMouseListener(new MouseListener() {
                  @Override
@@ -961,6 +1004,98 @@ public class PlayModeUI extends ImagePanel implements IRenderer, MouseListener {
                 button.setBackground(Color.LIGHT_GRAY);
             }
         });
+    }
+
+    private void showHallCompletedEffect(int hallNumber) {
+        BufferedImage overlayImage;
+        if (hallNumber == 1) {
+            overlayImage = earthCompleteImage;
+        } else if (hallNumber == 2) {
+            overlayImage = airCompleteImage;
+        } else {
+            overlayImage = waterCompleteImage;  // existing
+        }
+        // ...existing code that creates a FadingPanel overlay...
+        FadingPanel overlay = new FadingPanel();
+        overlay.setLayout(null);
+        overlay.setOpaque(false);
+        overlay.setBounds(0, 0, getWidth(), getHeight());
+        JLabel imageLabel = new JLabel(new ImageIcon(overlayImage));
+        imageLabel.setBounds((getWidth() - overlayImage.getWidth())/2, 
+                             (getHeight() - overlayImage.getHeight())/2,
+                             overlayImage.getWidth(), 
+                             overlayImage.getHeight());
+        overlay.add(imageLabel);
+        add(overlay);
+        overlay.setAlpha(0f);
+        overlay.setVisible(true);
+
+        Timer fadeInTimer = new Timer(25, e -> {
+            float newAlpha = overlay.getAlpha() + 0.02f;
+            if (newAlpha >= 1f) {
+                overlay.setAlpha(1f);
+                ((Timer)e.getSource()).stop();
+                new Timer(2000, evt -> {
+                    Timer fadeOutTimer = new Timer(25, f -> {
+                        float alpha = overlay.getAlpha() - 0.02f;
+                        if (alpha <= 0f) {
+                            overlay.setAlpha(0f);
+                            remove(overlay);
+                            repaint();
+                            ((Timer)f.getSource()).stop();
+                        } else {
+                            overlay.setAlpha(alpha);
+                        }
+                    });
+                    fadeOutTimer.start();
+                }).start();
+            } else {
+                overlay.setAlpha(newAlpha);
+            }
+            overlay.repaint();
+        });
+        fadeInTimer.start();
+        String soundPath;
+        if (hallNumber == 1) {
+            soundPath = "src/main/resources/assets/earth.wav";
+        } else if (hallNumber == 2) {
+            soundPath = "src/main/resources/assets/air.wav";
+        } else {
+            soundPath = "src/main/resources/assets/water.wav";
+        }
+        playSoundEffect(soundPath);
+        // ...existing code...
+    }
+
+    private void playSoundEffect(String audioPath) {
+        try {
+            File audioFile = new File(audioPath);
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioFile);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioIn);
+            clip.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void drawNotifications(Graphics2D g2d) {
+        int notifWidth = 250; // Reduced width to fit the screen
+        int notifHeight = 40;
+        int spacing = 10;
+        int x = getWidth() - notifWidth - 5;
+        // Ensure notifications stack upwards without going off-screen
+        int startY = getHeight() - 20 - notifHeight;
+        for (int i = notifications.size() - 1; i >= 0; i--) {
+            String message = notifications.get(i);
+            int y = startY - (notifications.size() - 1 - i) * (notifHeight + spacing);
+            if (y < 0) break; // Stop drawing if notifications exceed the top of the screen
+            g2d.setColor(new Color(0, 0, 0, 150));
+            g2d.fillRoundRect(x, y, notifWidth, notifHeight, 10, 10);
+            g2d.setColor(Color.WHITE);
+            // Adjust text wrapping or scaling if necessary
+            g2d.drawString(message, x + 10, y + 25);
+        }
     }
 
  

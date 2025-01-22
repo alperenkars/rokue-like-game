@@ -100,9 +100,9 @@ public class Hero implements Serializable {
                     cell.setContent(null);  // Clear the cell
                     enchantment.applyEffect(this);
                     if (enchantment instanceof ExtraLife) {
-                        eventManager.notify("SHOW_INFO", "Extra Life collected! You gained an additional life.");
+                        eventManager.notify("SHOW_INFO", "Extra Life collected!");
                     } else {
-                        eventManager.notify("SHOW_INFO", "Extra Time collected! 5 seconds added to the timer.");
+                        eventManager.notify("SHOW_INFO", "Extra Time collected!");
                     }
                 } else {
                     // Check inventory limit for storable enchantments
@@ -116,13 +116,13 @@ public class Hero implements Serializable {
                     
                     if (enchantment instanceof CloakOfProtection) {
                         addToInventory("CLOAK");
-                        eventManager.notify("SHOW_INFO", "Cloak of Protection added to inventory! Use it to become invisible to archers.");
+                        eventManager.notify("SHOW_INFO", "Cloak added!");
                     } else if (enchantment instanceof Reveal) {
                         addToInventory("REVEAL");
-                        eventManager.notify("SHOW_INFO", "Reveal enchantment added to inventory! Use it to reveal the rune's location.");
+                        eventManager.notify("SHOW_INFO", "Reveal enchantment added!");
                     } else if (enchantment instanceof LuringGem) {
                         addToInventory("LURE");
-                        eventManager.notify("SHOW_INFO", "Luring Gem added to inventory! Use it to distract fighter monsters.");
+                        eventManager.notify("SHOW_INFO", "Luring Gem added!");
                     }
                 }
             }

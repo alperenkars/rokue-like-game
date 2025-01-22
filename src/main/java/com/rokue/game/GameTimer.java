@@ -22,7 +22,7 @@ public class GameTimer {
         eventManager.subscribe("ADD_TIME", (eventType, data) -> {
             int timeToAdd = (int) data;
             addTime(timeToAdd);
-            System.out.println("Added " + timeToAdd + " seconds to the timer.");
+          //  System.out.println("Added " + timeToAdd + " seconds to the timer.");
         });
     }
 
