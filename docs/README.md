@@ -9,9 +9,6 @@
 ## Project Description
 RoKUe-Like is the Fall 2024 term project of COMP302: Software Engineering course at Koç University which is an adventurous rogue-like game. The hero must traverse various halls—Earth, Air, Water, and Fire—by finding hidden runes while avoiding monsters and using enchantments. The goal is to collect all runes and exit the dungeon before time runs out.
 
-
-![Level design](../game-images/game-prep.png)
-![Main menu](../game-images/main-menu.png)
 ![Gameplay](../game-images/in-game.png)
 
 ---
